@@ -17,5 +17,7 @@ namespace TesteItau_WebApp.DAO
 		public DbSet<Distribuicao> Distribuicoes { get; set; }
 		public DbSet<CestaRecomendacao> CestasRecomendacao { get; set; }
 		public DbSet<ItemCesta> ItensCesta { get; set; }
+		public DbSet<Cotacao> Cotacoes { get; set; }
+		public DbSet<Usuario> Usuarios { get; set; }
 	}
 }
