@@ -13,5 +13,6 @@ namespace TesteItau_WebApp.DAO
         public DbSet<ContaGrafica> ContasGraficas { get; set; }
 		public DbSet<Custodia> Custodias { get; set; }
         public DbSet<OrdemCompra> OrdensCompra { get; set; }
+		public DbSet<EventoIR> EventosIR { get; set; }
 	}
 }
