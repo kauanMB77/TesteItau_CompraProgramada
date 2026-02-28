@@ -10,7 +10,8 @@ namespace TesteItau_WebApp.DAO
         public AppDBContext(DbContextOptions<AppDBContext> options): base(options) {}
 
         public DbSet<Client> Clientes { get; set; }
-
         public DbSet<ContaGrafica> ContasGraficas { get; set; }
-    }
+		public DbSet<Custodia> Custodias { get; set; }
+        public DbSet<OrdemCompra> OrdensCompra { get; set; }
+	}
 }
