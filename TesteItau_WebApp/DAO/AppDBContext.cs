@@ -16,5 +16,6 @@ namespace TesteItau_WebApp.DAO
 		public DbSet<EventoIR> EventosIR { get; set; }
 		public DbSet<Distribuicao> Distribuicoes { get; set; }
 		public DbSet<CestaRecomendacao> CestasRecomendacao { get; set; }
+		public DbSet<ItemCesta> ItensCesta { get; set; }
 	}
 }
