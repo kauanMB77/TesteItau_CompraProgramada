@@ -1,0 +1,6 @@
+@TesteItau_WebApp_HostAddress = http://localhost:5177
+
+GET {{TesteItau_WebApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
