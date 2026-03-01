@@ -67,6 +67,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
+    margin-top: auto;
 }
 
     .btn-primary:hover {

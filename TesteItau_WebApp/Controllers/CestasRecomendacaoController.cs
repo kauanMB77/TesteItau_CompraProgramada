@@ -44,11 +44,10 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(cestas);
 		}
 
-		[HttpGet("{id}")]
+        [HttpGet("{id}")]
 		public async Task<IActionResult> GetCesta(long id)
 		{
-			var cesta = await _context.CestasRecomendacao
-				.FirstOrDefaultAsync(c => c.Id == id);
+			var cesta = await _context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Id == id);
 
 			if (cesta == null)
 				return NotFound();
@@ -56,7 +55,18 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(cesta);
 		}
 
-		[HttpPut("desativar/{id}")]
+        [HttpGet("ativa")]
+        public async Task<IActionResult> GetAtiva()
+        {
+            var cesta = await _context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Ativa == true);
+
+            if (cesta == null)
+                return NotFound();
+
+            return Ok(cesta);
+        }
+
+        [HttpPut("desativar/{id}")]
 		public async Task<IActionResult> DesativarCesta(long id)
 		{
 			var cesta = await _context.CestasRecomendacao
@@ -72,5 +82,5 @@ namespace TesteItau_WebApp.Controllers
 
 			return Ok(cesta);
 		}
-	}
+    }
 }

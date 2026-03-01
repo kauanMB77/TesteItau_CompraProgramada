@@ -4,9 +4,7 @@
     ViewData["Title"] = "Home";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/pages/home.css" />
-}
+@section Styles {<link rel="stylesheet" href="~/css/pages/home.css" />}
 
 <div class="home-container">
     <!-- Card 1 -->
@@ -14,16 +12,13 @@
 
         @if (Model == null || !Model.ativo)
         {
-            <h3>Realizar Adesão</h3>
+            <h3>Status de Investiment</h3>
 
             <p>
-                Informe o valor que deseja investir para iniciar sua adesão ao plano,
-                este valor será investido mensalmente em ações definidas por nosso TOP 5 da B3.
+                Atualmente você não investe com a Compra de Ações programada, para investir, clique no botão abaixo e ative sua conta!
             </p>
 
-            <input type="text" placeholder="Valor mensal" class="input-valor" />
-
-            <button class="btn-primary">Aderir</button>
+            <button class="btn-primary" onclick="location.href='@Url.Action("Index","Manutencao")'">Investir</button>
         }
         else
         {
@@ -36,8 +31,6 @@
             <div class="valor-investido">
                 @Model.valorInvestido.ToString()
             </div>
-
-            <button class="btn-primary">Alterar Investimento</button>
         }
 
     </div>
@@ -50,18 +43,17 @@
             porcentagem e valor total investido!
         </p>
 
-        <button class="btn-primary">Consultar</button>
+        <button class="btn-primary" onclick="location.href='@Url.Action("Index","Carteira")'"> Consultar </button>
     </div>
 
     <!-- Card 3 -->
     <div class="home-card">
         <h3>Manutenção do Produto</h3>
         <p>
-            Veja suas opções de manutenção,
-            altere o valor mensal ou saia da assinatura.
+            Veja suas opções de manutenção, altere o valor mensal ou saia da assinatura.
         </p>
 
-        <button class="btn-primary">Prosseguir</button>
+        <button class="btn-primary" onclick="location.href='@Url.Action("Index","Manutencao")'">Manutenção</button>
     </div>
 
 </div>

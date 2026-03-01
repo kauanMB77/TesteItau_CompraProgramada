@@ -1,0 +1,41 @@
+﻿@model HomeViewModel
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/home.css" />
+}
+
+<div class="home-container">
+
+    <div class="home-card">
+        <h3>Cesta Top Five</h3>
+
+        <p>
+            Verifique a atual Cesta Top Five, com tickers, valores de cada ação e porcentagens.
+        </p>
+
+        <button class="btn-primary" onclick="location.href='@Url.Action("Index","Cesta")'">Verificar</button>
+    </div>
+
+    <div class="home-card">
+        <h3>Histórico</h3>
+        <p>
+            Verifique o histórico de alterações feitas na Cesta.
+        </p>
+
+        <button class="btn-primary" onclick="location.href='@Url.Action("Historico","Cesta")'">Verificar</button>
+    </div>
+
+    <div class="home-card">
+        <h3>Disparar Rebalanceamento</h3>
+        <p>
+            Dispara o rebalanceamento em todas as carteiras, comprando sub-alocados e vendendo sobre-alocados.
+        </p>
+
+        <button class="btn-primary">Disparar</button>
+    </div>
+
+</div>

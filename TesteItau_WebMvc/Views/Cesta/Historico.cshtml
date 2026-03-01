@@ -1,0 +1,52 @@
+﻿@model List<TesteItau_WebMvc.Models.CestaTopFiveViewModel>
+
+<h2>Histórico de Cestas</h2>
+
+<form asp-action="Historico" method="post" class="mb-4">
+
+    <div class="row">
+        <div class="col-md-4">
+            <input type="number"
+                   name="cestaId"
+                   class="form-control"
+                   placeholder="Informe o Id da Cesta"
+                   required />
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">
+                Buscar
+            </button>
+        </div>
+    </div>
+
+</form>
+
+@if (Model != null && Model.Any())
+{
+    <h4>Cesta @ViewBag.CestaId</h4>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Percentual (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Ticker</td>
+                    <td>@item.Percentual</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (ViewBag.CestaId != null)
+{
+    <div class="alert alert-warning">
+        Nenhum item encontrado para esta cesta.
+    </div>
+}

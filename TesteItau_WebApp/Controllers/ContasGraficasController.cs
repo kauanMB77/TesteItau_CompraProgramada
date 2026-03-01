@@ -62,5 +62,19 @@ namespace TesteItau_WebApp.Controllers
 
             return Ok(contas);
         }
+
+        [HttpGet("cliente/{clienteId}")]
+        public async Task<IActionResult> GetContaGraficaIdByCliente(long clienteId)
+        {
+            var contaId = await _context.ContasGraficas
+                .Where(c => c.ClienteId == clienteId)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync();
+
+            if (contaId == 0)
+                return NotFound("Conta gráfica não encontrada para este cliente.");
+
+            return Ok(new { ContaGraficaId = contaId });
+        }
     }
 }

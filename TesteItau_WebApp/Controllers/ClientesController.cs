@@ -61,5 +61,83 @@ namespace TesteItau_WebApp.Controllers
                 valorInvestido = cliente.ValorMensal
             });
         }
+
+        [HttpPut("{id}/desativar")]
+        public async Task<IActionResult> DesativarConta(long id)
+        {
+            var cliente = await _context.Clientes.FindAsync(id);
+
+            if (cliente == null)
+                return NotFound(new { mensagem = "Cliente não encontrado." });
+
+            if (!cliente.Ativo)
+                return BadRequest(new { mensagem = "Cliente já está desativado." });
+
+            cliente.Ativo = false;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensagem = "Conta desativada com sucesso." });
+        }
+
+        [HttpPut("{id}/ativar")]
+        public async Task<IActionResult> AtivarConta(long id)
+        {
+            var cliente = await _context.Clientes.FindAsync(id);
+
+            if (cliente == null)
+                return NotFound(new { mensagem = "Cliente não encontrado." });
+
+            if (cliente.Ativo)
+                return BadRequest(new { mensagem = "Cliente já está ativo." });
+
+            cliente.Ativo = true;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensagem = "Conta ativada com sucesso." });
+        }
+
+        [HttpPut("{id}/valor")]
+        public async Task<IActionResult> AtualizarValorInvestimento(long id, [FromBody] decimal novoValor)
+        {
+            if (novoValor <= 0)
+                return BadRequest(new { mensagem = "O valor deve ser maior que zero." });
+
+            var cliente = await _context.Clientes.FindAsync(id);
+
+            if (cliente == null)
+                return NotFound(new { mensagem = "Cliente não encontrado." });
+
+            cliente.ValorMensal = novoValor;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensagem = "Valor atualizado com sucesso.",
+                novoValor = cliente.ValorMensal
+            });
+        }
+
+        [HttpGet("{email}/Id")]
+        public async Task<IActionResult> GetIdWithEmail(string email)
+        {
+            var cliente = await _context.Clientes
+                .Where(c => c.Email == email)
+                .Select(c => new
+                {
+                    c.Id
+                })
+                .FirstOrDefaultAsync();
+
+            if (cliente == null)
+                return NotFound(new { mensagem = "Cliente não encontrado." });
+
+            return Ok(new
+            {
+                clienteId = cliente.Id
+            });
+        }
     }
 }

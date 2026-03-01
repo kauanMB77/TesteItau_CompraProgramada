@@ -1,0 +1,32 @@
+﻿@model TesteItau_WebMvc.Models.CarteiraViewModel
+
+<h2>Minha Carteira</h2>
+
+@if (!Model.Custodias.Any())
+{
+    <p>Nenhuma custódia encontrada.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Quantidade</th>
+                <th>Preço Médio</th>
+                <th>Última Atualização</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Custodias)
+            {
+                <tr>
+                    <td>@item.Ticker</td>
+                    <td>@item.Quantidade</td>
+                    <td>@item.PrecoMedio.ToString("C")</td>
+                    <td>@item.DataUltimaAtualizacao.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

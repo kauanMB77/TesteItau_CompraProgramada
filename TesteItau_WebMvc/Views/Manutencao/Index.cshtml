@@ -1,0 +1,55 @@
+﻿@model ManutencaoViewModel
+
+@{
+    ViewData["Title"] = "Manutenção";
+}
+
+@section Styles {<link rel="stylesheet" href="~/css/pages/home.css" />}
+
+<div class="home-container">
+
+    <div class="home-card">
+        <h3>Alterar Valor</h3>
+
+        <p>Valor atual:</p>
+
+        <div class="valor-investido">
+            @Model.ValorMensal.ToString("C",
+                     new System.Globalization.CultureInfo("pt-BR"))
+        </div>
+
+        <form asp-controller="Manutencao" asp-action="AlterarValor" method="post">
+            <input type="text" name="novoValor" placeholder="Novo valor" class="input-valor" required />
+            <button type="submit" class="btn-primary">Alterar</button>
+        </form>
+    </div>
+
+    <div class="home-card">
+
+        @if (Model.Ativo)
+        {
+            <h3>Desativar Investimento</h3>
+
+            <p>
+                Clique abaixo para desativar seus investimentos, você pode reativa-los assim que puder investir novamente.
+            </p>
+
+            <form asp-controller="Manutencao" asp-action="Desativar" method="post">
+                <button type="submit" class="btn-primary">Desativar</button>
+            </form>
+        }
+        else
+        {
+            <h3>Ativar Investimento</h3>
+
+            <p>
+                Clique abaixo para ativar seus investimentos e começar a investir com segurança com o programa de Compra Automática:
+            </p>
+            <form asp-controller="Manutencao" asp-action="Ativar" method="post">
+                <button type="submit" class="btn-primary">Ativar</button>
+            </form>
+        }
+
+    </div>
+
+</div>

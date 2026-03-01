@@ -53,5 +53,21 @@ namespace TesteItau_WebApp.Controllers
 
 			return Ok(custodias);
 		}
-	}
+
+        [HttpGet("conta/{contaGraficaId}")]
+        public async Task<IActionResult> GetCustodiasByContaGrafica(long contaGraficaId)
+        {
+            var contaExiste = await _context.ContasGraficas
+                .AnyAsync(c => c.Id == contaGraficaId);
+
+            if (!contaExiste)
+                return NotFound("Conta gráfica não encontrada.");
+
+            var custodias = await _context.Custodias
+                .Where(c => c.ContaGraficaId == contaGraficaId)
+                .ToListAsync();
+
+            return Ok(custodias);
+        }
+    }
 }
