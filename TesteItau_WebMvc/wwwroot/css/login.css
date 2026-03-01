@@ -1,0 +1,82 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5c242, #9e7e2e);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    width: 350px;
+}
+
+    .login-container h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #333;
+    }
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+
+        .form-group input:focus {
+            border-color: #005AA7;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 90, 167, 0.4);
+        }
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: #bfab36;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+    .btn-login:hover {
+        background-color: #9e7e2e;
+    }
+
+.error-message {
+    background-color: #ffe5e5;
+    color: #cc0000;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}

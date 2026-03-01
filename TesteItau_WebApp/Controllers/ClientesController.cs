@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TesteItau_WebApp.DAO;
 using TesteItau_WebApp.Models;
 
@@ -35,6 +36,30 @@ namespace TesteItau_WebApp.Controllers
                 return NotFound();
 
             return Ok(cliente);
+        }
+
+        [HttpGet("{id}/status")]
+        public async Task<IActionResult> GetStatusCliente(long id)
+        {
+            var cliente = await _context.Clientes
+                .Where(c => c.Id == id)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Ativo,
+                    c.ValorMensal
+                })
+                .FirstOrDefaultAsync();
+
+            if (cliente == null)
+                return NotFound(new { mensagem = "Cliente não encontrado." });
+
+            return Ok(new
+            {
+                clienteId = cliente.Id,
+                ativo = cliente.Ativo,
+                valorInvestido = cliente.ValorMensal
+            });
         }
     }
 }

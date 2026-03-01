@@ -1,0 +1,67 @@
+﻿@model HomeViewModel
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/home.css" />
+}
+
+<div class="home-container">
+    <!-- Card 1 -->
+    <div class="home-card">
+
+        @if (Model == null || !Model.ativo)
+        {
+            <h3>Realizar Adesão</h3>
+
+            <p>
+                Informe o valor que deseja investir para iniciar sua adesão ao plano,
+                este valor será investido mensalmente em ações definidas por nosso TOP 5 da B3.
+            </p>
+
+            <input type="text" placeholder="Valor mensal" class="input-valor" />
+
+            <button class="btn-primary">Aderir</button>
+        }
+        else
+        {
+            <h3>Status de Investimento</h3>
+
+            <p>
+                Atualmente você está ativo no plano de investimento automático, seu investimento mensal está em:
+            </p>
+
+            <div class="valor-investido">
+                @Model.valorInvestido.ToString()
+            </div>
+
+            <button class="btn-primary">Alterar Investimento</button>
+        }
+
+    </div>
+
+    <!-- Card 2 -->
+    <div class="home-card">
+        <h3>Consultar Carteira</h3>
+        <p>
+            Consulte aqui sua carteira, quais são suas ações,
+            porcentagem e valor total investido!
+        </p>
+
+        <button class="btn-primary">Consultar</button>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="home-card">
+        <h3>Manutenção do Produto</h3>
+        <p>
+            Veja suas opções de manutenção,
+            altere o valor mensal ou saia da assinatura.
+        </p>
+
+        <button class="btn-primary">Prosseguir</button>
+    </div>
+
+</div>

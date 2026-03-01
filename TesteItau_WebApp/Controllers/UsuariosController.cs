@@ -74,6 +74,34 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(usuario);
 		}
 
+		[HttpPost("login")]
+		public async Task<IActionResult> Login([FromBody] LoginRequest request)
+		{
+			var usuario = await _context.Usuarios
+				.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+			if (usuario == null)
+				return Unauthorized("Usuário ou senha inválidos.");
+
+			var senhaHash = GerarHash(request.Senha);
+
+			if (usuario.Senha != senhaHash)
+				return Unauthorized("Usuário ou senha inválidos.");
+
+			return Ok(new
+			{
+				usuario.Id,
+				usuario.Email,
+				usuario.Tipo
+			});
+		}
+
+		public class LoginRequest
+		{
+			public string Email { get; set; } = null!;
+			public string Senha { get; set; } = null!;
+		}
+
 		private string GerarHash(string senha)
 		{
 			using var sha = SHA256.Create();
