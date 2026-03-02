@@ -27,7 +27,8 @@ namespace TesteItau_WebMvc.Controllers
             if (!clientesAtivos.Any())
                 return RedirectToAction("Painel");
 
-            var montanteTotal = (clientesAtivos.Sum(c => c.ValorMensal))/3;
+            var somaAportes = clientesAtivos.Sum(c => c.ValorMensal);
+            var montanteCompra = somaAportes / 3;
 
             var cesta = await ObterCestaAtiva(client);
             if (cesta == null)
@@ -43,13 +44,30 @@ namespace TesteItau_WebMvc.Controllers
                 clientesAtivos,
                 cestaItens,
                 cotacoes,
-                montanteTotal,
+                montanteCompra,
                 sobrasPorTicker
             );
 
-            ViewBag.MontanteTotal = montanteTotal;
+            decimal totalInvestido = 0;
+
+            foreach (var acao in acoesCompradas)
+            {
+                var cotacao = cotacoes
+                    .FirstOrDefault(c => c.Ticker == acao.Key);
+
+                if (cotacao != null)
+                {
+                    totalInvestido += acao.Value * cotacao.PrecoFechamento;
+                }
+            }
+
+            var dinheiroSobrando = montanteCompra - totalInvestido;
+
+            ViewBag.DinheiroSobrando = dinheiroSobrando;
+            ViewBag.MontanteTotal = montanteCompra;
             ViewBag.TotalContasAtivas = clientesAtivos.Count;
             ViewBag.AcoesCompradas = acoesCompradas;
+            ViewBag.AcoesSobraram = sobrasPorTicker;
 
             return View("ResultadoMotor");
         }
@@ -154,7 +172,8 @@ namespace TesteItau_WebMvc.Controllers
 
             foreach (var cliente in clientesAtivos)
             {
-                var proporcao = cliente.ValorMensal / montanteTotal;
+                var somaAportes = clientesAtivos.Sum(c => c.ValorMensal);
+                var proporcao = cliente.ValorMensal / somaAportes;
 
                 var quantidadeCliente =
                     (int)Math.Floor(quantidadeTotal * proporcao);

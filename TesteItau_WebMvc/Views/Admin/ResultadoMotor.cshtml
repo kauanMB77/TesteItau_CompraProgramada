@@ -30,6 +30,10 @@ else
             <strong>Total de Contas Ativas:</strong>
             @ViewBag.TotalContasAtivas
         </p>
+        <p>
+            <strong>Dinheiro que Sobrou:</strong>
+            R$ @String.Format("{0:N2}", ViewBag.DinheiroSobrando)
+        </p>
     </div>
 
     @if (ViewBag.AcoesCompradas != null)
