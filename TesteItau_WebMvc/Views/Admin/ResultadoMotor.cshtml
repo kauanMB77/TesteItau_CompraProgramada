@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Resultado do Motor de Compra";
+}
+
+<h2>Resultado do Motor de Compra</h2>
+
+<hr />
+
+@if (ViewBag.MontanteTotal == null)
+{
+    <div class="alert alert-warning">
+        Nenhuma execução realizada.
+    </div>
+
+    <a asp-action="Painel" class="btn btn-primary">
+        Voltar ao Painel
+    </a>
+}
+else
+{
+    <div class="card p-3 mb-3">
+        <h4>Resumo Geral</h4>
+
+        <p>
+            <strong>Montante Total Investido:</strong>
+            R$ @String.Format("{0:N2}", ViewBag.MontanteTotal)
+        </p>
+
+        <p>
+            <strong>Total de Contas Ativas:</strong>
+            @ViewBag.TotalContasAtivas
+        </p>
+    </div>
+
+    @if (ViewBag.AcoesCompradas != null)
+    {
+        <div class="card p-3">
+            <h4>Ações Compradas</h4>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Quantidade Comprada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in (Dictionary<string, int>)ViewBag.AcoesCompradas)
+                    {
+                        <tr>
+                            <td>@item.Key</td>
+                            <td>@item.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (ViewBag.AcoesSobraram != null)
+    {
+        var sobras = ViewBag.AcoesSobraram as Dictionary<string, int>;
+
+        if (sobras.Any())
+        {
+            <div class="card p-3 mt-3">
+                <h4>Ações Sobraram (Enviadas para Conta Master)</h4>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Quantidade Sobrando</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in sobras)
+                        {
+                            <tr>
+                                <td>@item.Key</td>
+                                <td>@item.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    <a asp-action="Painel" class="btn btn-primary mt-3">
+        Voltar ao Painel
+    </a>
+}

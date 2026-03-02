@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TesteItau_WebApp", "TesteItau_WebApp\TesteItau_WebApp.csproj", "{AF398183-31B0-45FC-993F-ACD667F525FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TesteItau_WebApp", "TesteItau_WebApp\TesteItau_WebApp.csproj", "{AF398183-31B0-45FC-993F-ACD667F525FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TesteItau_WebMvc", "TesteItau_WebMvc\TesteItau_WebMvc.csproj", "{09E6D308-6A35-40D3-B3CD-5A22EC0F54D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TesteItau_WebMvc", "TesteItau_WebMvc\TesteItau_WebMvc.csproj", "{09E6D308-6A35-40D3-B3CD-5A22EC0F54D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

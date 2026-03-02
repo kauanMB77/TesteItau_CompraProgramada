@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Painel Administrativo";
+}
+
+<h2>Painel Administrativo</h2>
+
+<hr />
+
+<form asp-action="AtivarMotorCompra" method="post">
+
+    <button type="submit"
+            class="btn btn-danger"
+            onclick="return confirm('Deseja ativar o motor de compra?')">
+        Ativar Motor de Compra
+    </button>
+
+</form>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-success mt-3">
+        @TempData["Mensagem"]
+    </div>
+}
+

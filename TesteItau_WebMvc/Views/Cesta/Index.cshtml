@@ -2,6 +2,7 @@
 
 <h2>Cesta Top Five</h2>
 
+<!-- 🔹 FORM 1 - Editar Cesta -->
 <form asp-action="Editar" method="post">
 
     <table class="table table-bordered">
@@ -33,6 +34,17 @@
 
     <button type="submit" class="btn btn-success">
         Salvar Alterações
+    </button>
+
+</form>
+
+<hr />
+
+<!-- 🔹 FORM 2 - Importar Cotação -->
+<form asp-action="ImportarCotacao" method="post">
+
+    <button type="submit" class="btn btn-primary">
+        Importar Cotações da B3
     </button>
 
 </form>

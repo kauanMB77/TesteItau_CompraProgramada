@@ -60,5 +60,16 @@ namespace TesteItau_WebApp.Controllers
 
 			return Ok(item);
 		}
-	}
+
+        [HttpGet("itensCesta/{id}")]
+        public async Task<IActionResult> GetItemCestaPorId(long id)
+        {
+            var itens = await _context.ItensCesta.Where(i => i.CestaId == id).ToListAsync();
+
+            if (itens == null || !itens.Any())
+                return NotFound();
+
+            return Ok(itens);
+        }
+    }
 }

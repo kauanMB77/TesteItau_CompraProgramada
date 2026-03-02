@@ -27,6 +27,17 @@ namespace TesteItau_WebApp.Controllers
             return CreatedAtAction(nameof(GetCliente), new { id = cliente.Id }, cliente);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetClientes()
+        {
+            var clientes = await _context.Clientes.ToListAsync();
+
+            if (clientes == null || !clientes.Any())
+                return NotFound();
+
+            return Ok(clientes);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCliente(long id)
         {
