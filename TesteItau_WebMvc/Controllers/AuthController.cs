@@ -23,14 +23,18 @@ namespace TesteItau_WebMvc.Controllers
 			return View();
 		}
 
+        /// <summary>
+        /// Rota de Login para o site, necessária para adicionar o HttpContext
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            //Sanitizando a model
             var json = JsonSerializer.Serialize(model);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
+            //Valida o Email e Senha
             var response = await _httpClient.PostAsync("api/usuarios/login", content);
-
             if (!response.IsSuccessStatusCode)
             {
                 ViewBag.Erro = "Email ou senha inválidos.";
@@ -38,45 +42,33 @@ namespace TesteItau_WebMvc.Controllers
             }
 
             var result = await response.Content.ReadAsStringAsync();
-
             var usuario = JsonSerializer.Deserialize<LoginResponseViewModel>(result, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+            //Colocando o HttpContex que é utilizado em outras Controllers
             HttpContext.Session.SetString("UsuarioLogado", usuario.Email);
             HttpContext.Session.SetInt32("UsuarioId", usuario.Id) ;
-            Console.WriteLine($"UsuarioId: {usuario.Id}");
 
             var emaildWithIdResponse = await _httpClient.GetAsync($"api/Clientes/{usuario.Email}/Id");
-
             if (!emaildWithIdResponse.IsSuccessStatusCode)
                 return RedirectToAction("Index", "Home");
-
             var emaildWithId = await emaildWithIdResponse.Content.ReadAsStringAsync();
 
             var contaId = JsonSerializer.Deserialize<ClienteIdWithEmailViewModel>(emaildWithId, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-
             var contaIdResponse = await _httpClient.GetAsync($"api/ContasGraficas/cliente/{contaId.clienteId}");
-            Console.WriteLine($"Id Conta Grafica: {contaIdResponse}");
-
-            if (!contaIdResponse.IsSuccessStatusCode)
-                return RedirectToAction("Index", "Home");
+            //if (!contaIdResponse.IsSuccessStatusCode)
+            //    return RedirectToAction("Index", "Home");
 
             var contaIdJson = await contaIdResponse.Content.ReadAsStringAsync();
-            Console.WriteLine($"Conta IDJSON: {contaIdJson}");
-            var contaIdObj = JsonSerializer.Deserialize<ContaGraficaResponsViewModel>(contaIdJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            Console.WriteLine($"ContaIdObj: {contaIdObj.contaGraficaId}");
-            if (contaIdObj == null)
-                return RedirectToAction("Index", "Home");
+            var contaIdObj = JsonSerializer.Deserialize<ContaGraficaResponsViewModel>(contaIdJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            //if (contaIdObj == null)
+            //    return RedirectToAction("Index", "Home");
 
             var contaResponse = await _httpClient.GetAsync($"api/ContasGraficas/{contaIdObj.contaGraficaId}");
-
-            Console.WriteLine($"contaResponse: {contaResponse}");
-            if (!contaResponse.IsSuccessStatusCode)
-                return RedirectToAction("Index", "Home");
+            //if (!contaResponse.IsSuccessStatusCode)
+            //    return RedirectToAction("Index", "Home");
 
             var contaJson = await contaResponse.Content.ReadAsStringAsync();
-
             var conta = JsonSerializer.Deserialize<ContaGraficaResponsViewModel>(contaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (conta?.Tipo?.ToUpper() == "MASTER")
@@ -93,6 +85,9 @@ namespace TesteItau_WebMvc.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Esta rota não só cadastra o Usuário, ela faz POST para Cliente, ContaGrafica e por fim para Usuario
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Cadastro(CadastroViewModel model)
         {
@@ -101,9 +96,7 @@ namespace TesteItau_WebMvc.Controllers
 
             try
             {
-                // ============================
-                // 1️⃣ Criar Cliente
-                // ============================
+                //Fazendo POST na tabela de Clientes
                 var cadastroResponse = await _httpClient.PostAsJsonAsync("api/Clientes", new
                 {
                     nome = model.Nome,
@@ -112,6 +105,7 @@ namespace TesteItau_WebMvc.Controllers
                     valorMensal = model.ValorMensal
                 });
 
+                //Validando o retorno de create Clientes
                 if (!cadastroResponse.IsSuccessStatusCode)
                 {
                     var erro = await cadastroResponse.Content.ReadAsStringAsync();
@@ -119,11 +113,8 @@ namespace TesteItau_WebMvc.Controllers
                     return View(model);
                 }
 
-                // ============================
-                // 2️⃣ Buscar ClienteId
-                // ============================
+                //Busca o ClienteID pelo Email
                 var clienteResponse = await _httpClient.GetAsync($"api/Clientes/{model.Email}/Id");
-
                 if (!clienteResponse.IsSuccessStatusCode)
                 {
                     var erro = await clienteResponse.Content.ReadAsStringAsync();
@@ -131,9 +122,8 @@ namespace TesteItau_WebMvc.Controllers
                     return View(model);
                 }
 
-                var cliente = await clienteResponse.Content
-                    .ReadFromJsonAsync<ClienteIdWithEmailViewModel>();
-
+                //Valida se o cliente existe e foi criado corretamente
+                var cliente = await clienteResponse.Content.ReadFromJsonAsync<ClienteIdWithEmailViewModel>();
                 if (cliente == null)
                 {
                     ViewBag.Erro = "Cliente não encontrado após cadastro.";
@@ -142,9 +132,7 @@ namespace TesteItau_WebMvc.Controllers
 
                 long clienteId = cliente.clienteId;
 
-                // ============================
-                // 3️⃣ Criar Conta Gráfica
-                // ============================
+                //Fazendo POST para criar ContaGrafica
                 var contaResponse = await _httpClient.PostAsJsonAsync("api/ContasGraficas", new
                 {
                     clienteId = clienteId,
@@ -152,6 +140,7 @@ namespace TesteItau_WebMvc.Controllers
                     tipo = "FILHOTE"
                 });
 
+                //Valida retorno da criação de contaGrafica
                 if (!contaResponse.IsSuccessStatusCode)
                 {
                     var erro = await contaResponse.Content.ReadAsStringAsync();
@@ -159,9 +148,7 @@ namespace TesteItau_WebMvc.Controllers
                     return View(model);
                 }
 
-                // ============================
-                // 4️⃣ Criar Usuário
-                // ============================
+                //Fazendo POST para rota de Criacao de Usuario
                 var usuarioResponse = await _httpClient.PostAsJsonAsync("api/Usuarios", new
                 {
                     clienteId = clienteId,
@@ -170,6 +157,7 @@ namespace TesteItau_WebMvc.Controllers
                     tipo = "CLIENTE"
                 });
 
+                //Valida Criacao de Usuario
                 if (!usuarioResponse.IsSuccessStatusCode)
                 {
                     var erro = await usuarioResponse.Content.ReadAsStringAsync();
@@ -177,6 +165,7 @@ namespace TesteItau_WebMvc.Controllers
                     return View(model);
                 }
 
+                //Se tudo der certo, para o Login com as informacoes adicionadas nas 3 tabelas
                 return RedirectToAction("Login");
             }
             catch (Exception ex)

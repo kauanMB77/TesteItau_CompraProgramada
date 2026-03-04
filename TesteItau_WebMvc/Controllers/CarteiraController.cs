@@ -13,38 +13,31 @@ public class CarteiraController : Controller
 
     public async Task<IActionResult> Index()
     {
+        //Validações, retornando para o Login caso não tenha UsuarioLogado ou UsuarioId
         if (HttpContext.Session.GetString("UsuarioLogado") == null)
             return RedirectToAction("Login", "Auth");
 
         var contaId = HttpContext.Session.GetInt32("UsuarioId");
-
         if (contaId == null)
             return RedirectToAction("Login", "Auth");
 
+
         var client = _factory.CreateClient();
+        var responseContaGrafica = await client.GetAsync($"https://localhost:7101/api/ContasGraficas/Cliente/{contaId}");
 
-        var responseContaGrafica =
-            await client.GetAsync($"https://localhost:7101/api/ContasGraficas/Cliente/{contaId}");
-
+        //Retorna a View, porém fica vazio
         if (!responseContaGrafica.IsSuccessStatusCode)
             return View(new CarteiraViewModel());
 
         var jsonContaGrafica = await responseContaGrafica.Content.ReadAsStringAsync();
 
-        Console.WriteLine($"ContaGrafica JSON: {jsonContaGrafica}");
+        var contaGrafica =JsonSerializer.Deserialize<ContaGraficaResponseViewModel>(jsonContaGrafica, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var contaGrafica =
-            JsonSerializer.Deserialize<ContaGraficaResponseViewModel>(
-                jsonContaGrafica,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+        //Retorna a View, porém fica vazio
         if (contaGrafica == null || contaGrafica.contaGraficaId == 0)
             return View(new CarteiraViewModel());
 
         var responseCustodias = await client.GetAsync($"https://localhost:7101/api/Custodia/conta/{contaGrafica.contaGraficaId}");
-
-        //Console.WriteLine($"Custodias JSON: {responseCustodias}");
-
         var listaCustodias = new List<CustodiaViewModel>();
 
         if (responseCustodias.IsSuccessStatusCode)
@@ -53,11 +46,7 @@ public class CarteiraController : Controller
 
             Console.WriteLine($"Custodias JSON: {jsonCustodias}");
 
-            listaCustodias =
-                JsonSerializer.Deserialize<List<CustodiaViewModel>>(
-                    jsonCustodias,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                ?? new List<CustodiaViewModel>();
+            listaCustodias =JsonSerializer.Deserialize<List<CustodiaViewModel>>(jsonCustodias, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CustodiaViewModel>();
         }
 
         var responseCotacao = await client.GetAsync("https://localhost:7101/api/Cotacoes/");
@@ -68,17 +57,11 @@ public class CarteiraController : Controller
         {
             var jsonCotacao = await responseCotacao.Content.ReadAsStringAsync();
 
-            listaCotacoes =
-                JsonSerializer.Deserialize<List<CotacaoViewModel>>(
-                    jsonCotacao,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                ?? new List<CotacaoViewModel>();
+            listaCotacoes =JsonSerializer.Deserialize<List<CotacaoViewModel>>(jsonCotacao, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CotacaoViewModel>();
         }
         foreach (var custodia in listaCustodias)
         {
-            var ultimaCotacao = listaCotacoes
-                .Where(c => c.Ticker == custodia.Ticker)
-                .FirstOrDefault();
+            var ultimaCotacao = listaCotacoes.Where(c => c.Ticker == custodia.Ticker).FirstOrDefault();
 
             if (ultimaCotacao != null)
                 custodia.PrecoFechamento = ultimaCotacao.PrecoFechamento;

@@ -18,11 +18,13 @@ namespace TesteItau_WebMvc.Controllers
 
         public async Task<IActionResult> Index()
         {
+            //Retorna para o Login caso não esteja Logado
             if (HttpContext.Session.GetString("UsuarioLogado") == null)
                 return RedirectToAction("Login", "Auth");
 
             HomeViewModel statusCliente = new HomeViewModel();
 
+            //Mostrando o Status no primeiro Card
             using (var httpClient = new HttpClient())
             {
                 var clienteId = HttpContext.Session.GetInt32("UsuarioId");
@@ -45,15 +47,16 @@ namespace TesteItau_WebMvc.Controllers
             return View(viewModel);
         }
 
-        public IActionResult Privacy()
-		{
-			return View();
-		}
+        //Testar e tirar Depois
+        //public IActionResult Privacy()
+		//{
+		//	return View();
+		//}
 
-		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-		public IActionResult Error()
-		{
-			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-		}
+		//[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+		//public IActionResult Error()
+		//{
+		//	return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+		//}
 	}
 }
