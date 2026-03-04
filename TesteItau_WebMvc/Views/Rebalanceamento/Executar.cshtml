@@ -1,0 +1,38 @@
+﻿@model List<string>
+
+@{
+    ViewData["Title"] = "Resultado do Rebalanceamento";
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">Resultado do Rebalanceamento</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success">
+            Nenhuma operação necessária. Todas as carteiras estão balanceadas dentro da margem de 5%.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                Operações Executadas
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    @foreach (var operacao in Model)
+                    {
+                        <li class="list-group-item">
+                            @operacao
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    <button class="btn-primary" onclick="location.href='@Url.Action("Index","Master")'"> Home </button>
+
+</div>

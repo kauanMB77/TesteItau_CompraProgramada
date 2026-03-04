@@ -148,15 +148,23 @@ namespace TesteItau_WebMvc.Controllers
                 if (cotacao == null)
                     continue;
 
-                var quantidadeTotal = CalcularQuantidadeTotal(
-                    montanteTotal,
-                    item.Percentual,
-                    cotacao.PrecoFechamento);
+                int quantidadeNovaCompra = CalcularQuantidadeTotal(montanteTotal, item.Percentual, cotacao.PrecoFechamento);
+                var response = await client.GetAsync($"https://localhost:7101/api/Custodia/conta/{contaMasterId}");
+                var json = await response.Content.ReadAsStringAsync();
+
+                var custodiaMaster = JsonSerializer.Deserialize<List<CustodiaViewModel>>(json,new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CustodiaViewModel>();
+
+                var sobraMaster = (int)Math.Floor(custodiaMaster.Where(c => c.Ticker == item.Ticker).Sum(c => c.Quantidade));
+
+                int quantidadeTotal = quantidadeNovaCompra + sobraMaster;
+
+                //Tira o ticker da conta Master
+                await client.DeleteAsync($"https://localhost:7101/api/Custodia/clear/{contaMasterId}/{item.Ticker}");
 
                 if (quantidadeTotal <= 0)
                     continue;
 
-                acoesCompradas[item.Ticker] = quantidadeTotal;
+                acoesCompradas[item.Ticker] = quantidadeNovaCompra;
 
                 await EnviarOrdemCompra(client, contaMasterId, item.Ticker, quantidadeTotal, cotacao.PrecoFechamento);
 
@@ -214,9 +222,7 @@ namespace TesteItau_WebMvc.Controllers
                     precoMedio = preco
                 };
 
-                await client.PostAsJsonAsync(
-                    "https://localhost:7101/api/Custodia",
-                    custodiaMaster);
+                await client.PostAsJsonAsync("https://localhost:7101/api/Custodia", custodiaMaster);
             }
         }
 

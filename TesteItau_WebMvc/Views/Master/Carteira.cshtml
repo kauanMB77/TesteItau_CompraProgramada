@@ -1,6 +1,6 @@
 ﻿@model TesteItau_WebMvc.Models.CarteiraViewModel
 
-<h2>Minha Carteira</h2>
+<h2>Carteira Master</h2>
 
 @if (!Model.Custodias.Any())
 {
@@ -11,22 +11,15 @@ else
     var totalInvestido = Model.Custodias
         .Sum(c => c.Quantidade * c.PrecoMedio);
 
-    var totalAtual = Model.Custodias
-        .Sum(c => c.ValorAtual);
-
-    <div class="mb-3">
-        <h4>Total Investido: <strong>@totalInvestido.ToString("C")</strong></h4>
-        <h4>Total Atual: <strong>@totalAtual.ToString("C")</strong></h4>
-    </div>
+    <h4>Total Investido: <strong>@totalInvestido.ToString("C")</strong></h4>
 
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
                 <th>Ticker</th>
                 <th>Quantidade</th>
-                <th>Custo Médio</th>
-                <th>Preço Fechamento</th>
-                <th>Valor Atual</th>
+                <th>Preço Médio</th>
+                <th>Valor Total</th>
                 <th>% na Carteira</th>
                 <th>Última Atualização</th>
             </tr>
@@ -34,16 +27,14 @@ else
         <tbody>
             @foreach (var item in Model.Custodias)
             {
-                var percentual = totalAtual > 0
-                ? (item.ValorAtual / totalAtual) * 100
-                : 0;
+                var valorTotalAcao = item.Quantidade * item.PrecoMedio;
+                var percentual = totalInvestido > 0 ? (valorTotalAcao / totalInvestido) * 100 : 0;
 
                 <tr>
                     <td>@item.Ticker</td>
                     <td>@item.Quantidade</td>
                     <td>@item.PrecoMedio.ToString("C")</td>
-                    <td>@item.PrecoFechamento.ToString("C")</td>
-                    <td>@item.ValorAtual.ToString("C")</td>
+                    <td>@valorTotalAcao.ToString("C")</td>
                     <td>@percentual.ToString("N2")%</td>
                     <td>@item.DataUltimaAtualizacao.ToString("dd/MM/yyyy HH:mm")</td>
                 </tr>

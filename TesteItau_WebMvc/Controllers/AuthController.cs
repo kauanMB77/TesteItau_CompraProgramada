@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using TesteItau_WebApp.Models;
@@ -22,7 +23,6 @@ namespace TesteItau_WebMvc.Controllers
 			return View();
 		}
 
-		[HttpPost]
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -42,7 +42,7 @@ namespace TesteItau_WebMvc.Controllers
             var usuario = JsonSerializer.Deserialize<LoginResponseViewModel>(result, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             HttpContext.Session.SetString("UsuarioLogado", usuario.Email);
-            HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
+            HttpContext.Session.SetInt32("UsuarioId", usuario.Id) ;
             Console.WriteLine($"UsuarioId: {usuario.Id}");
 
             var emaildWithIdResponse = await _httpClient.GetAsync($"api/Clientes/{usuario.Email}/Id");
@@ -85,6 +85,105 @@ namespace TesteItau_WebMvc.Controllers
             }
 
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        public IActionResult Cadastro()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cadastro(CadastroViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                // ============================
+                // 1️⃣ Criar Cliente
+                // ============================
+                var cadastroResponse = await _httpClient.PostAsJsonAsync("api/Clientes", new
+                {
+                    nome = model.Nome,
+                    cpf = model.Cpf,
+                    email = model.Email,
+                    valorMensal = model.ValorMensal
+                });
+
+                if (!cadastroResponse.IsSuccessStatusCode)
+                {
+                    var erro = await cadastroResponse.Content.ReadAsStringAsync();
+                    ViewBag.Erro = $"Erro ao criar cliente: {erro}";
+                    return View(model);
+                }
+
+                // ============================
+                // 2️⃣ Buscar ClienteId
+                // ============================
+                var clienteResponse = await _httpClient.GetAsync($"api/Clientes/{model.Email}/Id");
+
+                if (!clienteResponse.IsSuccessStatusCode)
+                {
+                    var erro = await clienteResponse.Content.ReadAsStringAsync();
+                    ViewBag.Erro = $"Erro ao buscar ClienteId: {erro}";
+                    return View(model);
+                }
+
+                var cliente = await clienteResponse.Content
+                    .ReadFromJsonAsync<ClienteIdWithEmailViewModel>();
+
+                if (cliente == null)
+                {
+                    ViewBag.Erro = "Cliente não encontrado após cadastro.";
+                    return View(model);
+                }
+
+                long clienteId = cliente.clienteId;
+
+                // ============================
+                // 3️⃣ Criar Conta Gráfica
+                // ============================
+                var contaResponse = await _httpClient.PostAsJsonAsync("api/ContasGraficas", new
+                {
+                    clienteId = clienteId,
+                    numeroConta = clienteId.ToString(),
+                    tipo = "FILHOTE"
+                });
+
+                if (!contaResponse.IsSuccessStatusCode)
+                {
+                    var erro = await contaResponse.Content.ReadAsStringAsync();
+                    ViewBag.Erro = $"Erro ao criar Conta Gráfica: {erro}";
+                    return View(model);
+                }
+
+                // ============================
+                // 4️⃣ Criar Usuário
+                // ============================
+                var usuarioResponse = await _httpClient.PostAsJsonAsync("api/Usuarios", new
+                {
+                    clienteId = clienteId,
+                    email = model.Email,
+                    senha = model.Senha,
+                    tipo = "CLIENTE"
+                });
+
+                if (!usuarioResponse.IsSuccessStatusCode)
+                {
+                    var erro = await usuarioResponse.Content.ReadAsStringAsync();
+                    ViewBag.Erro = $"Erro ao criar Usuário: {erro}";
+                    return View(model);
+                }
+
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Erro = "Erro inesperado: " + ex.Message;
+                return View(model);
+            }
         }
 
         public IActionResult Logout()

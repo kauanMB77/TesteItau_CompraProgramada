@@ -35,7 +35,7 @@
             Dispara o rebalanceamento em todas as carteiras, comprando sub-alocados e vendendo sobre-alocados.
         </p>
 
-        <button class="btn-primary">Disparar</button>
+        <button class="btn-primary" onclick="location.href='@Url.Action("Executar","Rebalanceamento")'">Disparar</button>
     </div>
 
     <div class="home-card">
@@ -45,6 +45,15 @@
         </p>
 
         <button class="btn-primary" onclick="location.href='@Url.Action("Painel","Admin")'">Verificar</button>
+    </div>
+
+    <div class="home-card">
+        <h3>Consultar Carteira</h3>
+        <p>
+            Consulte as ações que estão atualmente armazenadas na carteira Master, elas são os residuos das últimas compras de ações.
+        </p>
+
+        <button class="btn-primary" onclick="location.href='@Url.Action("Carteira","Master")'"> Consultar </button>
     </div>
 
 </div>

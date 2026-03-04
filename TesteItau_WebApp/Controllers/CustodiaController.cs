@@ -25,10 +25,7 @@ namespace TesteItau_WebApp.Controllers
 
             if (!contaExiste)
                 return BadRequest("ContaGraficaId informado não existe.");
-            var custodiaExistente = await _context.Custodias
-                .FirstOrDefaultAsync(c =>
-                    c.ContaGraficaId == novaCustodia.ContaGraficaId &&
-                    c.Ticker == novaCustodia.Ticker);
+            var custodiaExistente = await _context.Custodias.FirstOrDefaultAsync(c =>c.ContaGraficaId == novaCustodia.ContaGraficaId && c.Ticker == novaCustodia.Ticker);
 
             if (custodiaExistente == null)
             {
@@ -103,6 +100,20 @@ namespace TesteItau_WebApp.Controllers
                 .ToListAsync();
 
             return Ok(custodias);
+        }
+
+        [HttpDelete("clear/{contaGraficaId}/{ticker}")]
+        public async Task<IActionResult> DeleteAllCustodiasById(long  contaGraficaId, string ticker)
+        {
+            var custodias = await _context.Custodias.Where(c=> c.ContaGraficaId == contaGraficaId && c.Ticker == ticker).ToListAsync();
+
+            if (!custodias.Any())
+                return NotFound("Nenhuma custodia encontrada para o Id informado");
+
+            _context.Custodias.RemoveRange(custodias);
+            await _context.SaveChangesAsync();
+
+            return Ok("Custodias limpas para o Id informado");
         }
     }
 }
