@@ -16,18 +16,26 @@ namespace TesteItau_WebApp.Controllers
 			_context = context;
 		}
 
-		[HttpPost]
+        /// <summary>
+        /// Adiciona um novo Item a Cesta
+        /// </summary>
+        /// <param name="item"> Recebe um objeto ItemCesta com cestaId, ticker e percentual</param>
+        /// <returns>Informações do Item gerado</returns>
+        /// <response code="200">Item gerado com sucesso.</response>
+        /// <response code="400">Falha ao gerar o item, variáveis incorretas</response>
+        [HttpPost]
 		public async Task<IActionResult> PostItemCesta(ItemCesta item)
 		{
-			var cestaExiste = await _context.CestasRecomendacao
-				.AnyAsync(c => c.Id == item.CestaId);
-
+			//Validando se a Cesta existe, lembrando que esse Id é do CestasRecomendacao
+			var cestaExiste = await _context.CestasRecomendacao.AnyAsync(c => c.Id == item.CestaId);
 			if (!cestaExiste)
 				return BadRequest("CestaId informado não existe.");
 
-			if (string.IsNullOrWhiteSpace(item.Ticker))
+			//Validando a existencia do ticker
+			if (string.IsNullOrEmpty(item.Ticker))
 				return BadRequest("Ticker é obrigatório.");
 
+			//Validando o percentual
 			if (item.Percentual == null || item.Percentual <= 0 || item.Percentual > 100)
 				return BadRequest("Percentual deve estar entre 0 e 100.");
 
@@ -40,20 +48,34 @@ namespace TesteItau_WebApp.Controllers
 				new { id = item.Id }, item);
 		}
 
-		[HttpGet]
+        /// <summary>
+        /// Retorna todos os Itens na tabela
+        /// </summary>
+        /// <returns>Json com todos os Itens </returns>
+        /// <response code="200">Itens retornados com sucesso.</response>
+        [HttpGet]
 		public async Task<IActionResult> GetItensCesta()
 		{
-			var itens = await _context.ItensCesta
-				.ToListAsync();
+			var itens = await _context.ItensCesta.ToListAsync();
 
 			return Ok(itens);
 		}
 
-		[HttpGet("{id}")]
+        /// <summary>
+        /// Retorna certo Item dado seu Id
+        /// </summary>
+        /// <param name="id"> Id do Item da Cesta</param>
+        /// <returns>Item do id informado</returns>
+        /// <response code="200">Item retornado com sucesso.</response>
+        /// <response code="400">Falha ao retornar o item, variáveis incorretas</response>
+        [HttpGet("{id}")]
 		public async Task<IActionResult> GetItemCesta(long id)
 		{
-			var item = await _context.ItensCesta
-				.FirstOrDefaultAsync(i => i.Id == id);
+            //Validando o Id
+            if (string.IsNullOrEmpty(id.ToString()))
+                return BadRequest("Id é obrigatório.");
+
+            var item = await _context.ItensCesta.FirstOrDefaultAsync(i => i.Id == id);
 
 			if (item == null)
 				return NotFound();
@@ -61,9 +83,20 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(item);
 		}
 
+        /// <summary>
+        /// Retorna todos os itens de determinada Cesta
+        /// </summary>
+        /// <param name="id"> Id da Cesta</param>
+        /// <returns>Json com todos os Itens desta Cesta </returns>
+        /// <response code="200">Itens retornados com sucesso.</response>
+        /// <response code="400">Falha ao retornar os itens, variáveis incorretas</response>
         [HttpGet("itensCesta/{id}")]
         public async Task<IActionResult> GetItemCestaPorId(long id)
         {
+            //Validando o Id
+            if (string.IsNullOrEmpty(id.ToString()))
+                return BadRequest("Id é obrigatório.");
+
             var itens = await _context.ItensCesta.Where(i => i.CestaId == id).ToListAsync();
 
             if (itens == null || !itens.Any())

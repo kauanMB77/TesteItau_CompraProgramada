@@ -7,7 +7,7 @@ namespace TesteItau_WebApp.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	public class CestasRecomendacaoController : Controller
+	public class CestasRecomendacaoController : ControllerBase
 	{
 		private readonly AppDBContext _context;
 
@@ -16,9 +16,17 @@ namespace TesteItau_WebApp.Controllers
 			_context = context;
 		}
 
-		[HttpPost]
+        /// <summary>
+        /// Adiciona uma nova cesta a Tabela.
+        /// </summary>
+        /// <param name="cesta"> Recebe um obJeto CestaRecomendacao, utilizando cesta.Nome para definir o nome da cesta, a cesta recebida nesta API é sempre ativa e a DataCriacao é Datetime.Now</param>
+        /// <returns>Id da cesta gerada</returns>
+        /// <response code="200">Cesta criada com sucesso.</response>
+        /// <response code="400">Falha ao criar a cesta, variáveis incorretas</response>
+        [HttpPost]
 		public async Task<IActionResult> PostCesta(CestaRecomendacao cesta)
 		{
+			//Validações
 			if (string.IsNullOrWhiteSpace(cesta.Nome))
 				return BadRequest("Nome é obrigatório.");
 
@@ -31,23 +39,37 @@ namespace TesteItau_WebApp.Controllers
 			_context.CestasRecomendacao.Add(cesta);
 			await _context.SaveChangesAsync();
 
-			return CreatedAtAction(nameof(GetCesta),
-				new { id = cesta.Id }, cesta);
+			return CreatedAtAction(nameof(GetCesta), new { id = cesta.Id }, cesta);
 		}
 
-		[HttpGet]
+        /// <summary>
+        /// Retorna um Json com todas as cestas
+        /// </summary>
+        /// <returns>Id da cesta gerada</returns>
+        /// <response code="200">Cestas retornadas com sucesso.</response>
+        [HttpGet]
 		public async Task<IActionResult> GetCestas()
 		{
-			var cestas = await _context.CestasRecomendacao
-				.ToListAsync();
+            var cestas = await _context.CestasRecomendacao.ToListAsync();
 
 			return Ok(cestas);
 		}
 
+        /// <summary>
+        /// Retorna um json com determinada cesta
+        /// </summary>
+        /// <param name="id"> Id da cesta a ser retornada</param>
+        /// <returns>Json com a cesta identificada</returns>
+        /// <response code="200">Good Request, cesta retornada.</response>
+        /// <response code="400">Falha ao retornar a cesta, variáveis incorretas</response>
         [HttpGet("{id}")]
 		public async Task<IActionResult> GetCesta(long id)
 		{
-			var cesta = await _context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Id == id);
+            //Validações
+            if (string.IsNullOrWhiteSpace(id.ToString()))
+                return BadRequest("Id é obrigatório.");
+
+            var cesta = await _context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Id == id);
 
 			if (cesta == null)
 				return NotFound();
@@ -55,6 +77,11 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(cesta);
 		}
 
+        /// <summary>
+        /// Retorna o Id da cesta ativa no momento
+        /// </summary>
+        /// <returns>Json com a cesta ativa</returns>
+        /// <response code="200">Retornando cesta ativa.</response>
         [HttpGet("ativa")]
         public async Task<IActionResult> GetAtiva()
         {
@@ -66,11 +93,22 @@ namespace TesteItau_WebApp.Controllers
             return Ok(cesta);
         }
 
+        /// <summary>
+        /// Desativa determinada cesta
+        /// </summary>
+        /// <param name="id"> Id da cesta a ser Desativada, é necessário chamar esta rota após criar outra cesta, para desativar a anterior</param>
+        /// <returns>Json com a cesta desativada</returns>
+        /// <response code="200">Cesta desativada com sucesso.</response>
+        /// <response code="400">Falha ao desativar a cesta, variáveis incorretas</response>
         [HttpPut("desativar/{id}")]
 		public async Task<IActionResult> DesativarCesta(long id)
 		{
-			var cesta = await _context.CestasRecomendacao
-				.FirstOrDefaultAsync(c => c.Id == id);
+            //Validações
+            if (string.IsNullOrWhiteSpace(id.ToString()))
+                return BadRequest("Id é obrigatório.");
+
+
+            var cesta = await _context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Id == id);
 
 			if (cesta == null)
 				return NotFound();

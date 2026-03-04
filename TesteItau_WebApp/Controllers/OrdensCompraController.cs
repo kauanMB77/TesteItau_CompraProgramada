@@ -17,14 +17,22 @@ namespace TesteItau_WebApp.Controllers
 			_context = context;
 		}
 
-		[HttpPost]
+        /// <summary>
+        /// Adiciona uma nova Ordem de Compra a tabela
+        /// </summary>
+        /// <param name="ordem"> Recebe um objeto OrdemCompra com contaMasterId, ticker, quantidade, precoUnitario e TipoMercado</param>
+        /// <returns>Informações da compra gerada</returns>
+        /// <response code="200">Compra gerada com sucesso.</response>
+        /// <response code="400">Falha ao gerar compra, variáveis incorretas</response>
+        [HttpPost]
 		public async Task<IActionResult> PostOrdemCompra(OrdemCompra ordem)
 		{
+			//Validando a contaMasterId
 			var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == ordem.ContaMasterId);
-
 			if (!clienteExiste)
 				return BadRequest("ContaMasterId informado não existe.");
-
+			
+			//Validando o Enum TipoMercado
 			if (ordem.TipoMercado != null && ordem.TipoMercado != "LOTE" && ordem.TipoMercado != "FRACIONARIO")
 			{
 				return BadRequest("TipoMercado deve ser 'LOTE' ou 'FRACIONARIO'.");
@@ -37,11 +45,15 @@ namespace TesteItau_WebApp.Controllers
 			_context.OrdensCompra.Add(ordem);
 			await _context.SaveChangesAsync();
 
-			return CreatedAtAction(nameof(GetOrdemCompra),
-				new { id = ordem.Id }, ordem);
+			return CreatedAtAction(nameof(GetOrdemCompra),new { id = ordem.Id }, ordem);
 		}
 
-		[HttpGet]
+        /// <summary>
+        /// Retorna todas as ordens de compra
+        /// </summary>
+        /// <returns>Json com todas as ordens de compra</returns>
+        /// <response code="200">Compras retornadas com sucesso.</response>
+        [HttpGet]
 		public async Task<IActionResult> GetOrdensCompra()
 		{
 			var ordens = await _context.OrdensCompra
@@ -50,11 +62,17 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(ordens);
 		}
 
-		[HttpGet("{id}")]
+        /// <summary>
+        /// Retorna uma Ordem de compra dado certo Id
+        /// </summary>
+        /// <param name="id"> Id da ordem de compra</param>
+        /// <returns>Informações da Ordem de compra</returns>
+        /// <response code="200">Compra retornada com sucesso.</response>
+        /// <response code="400">Falha ao retornar compra, variáveis incorretas</response>
+        [HttpGet("{id}")]
 		public async Task<IActionResult> GetOrdemCompra(long id)
 		{
-			var ordem = await _context.OrdensCompra
-				.FirstOrDefaultAsync(o => o.Id == id);
+			var ordem = await _context.OrdensCompra.FirstOrDefaultAsync(o => o.Id == id);
 
 			if (ordem == null)
 				return NotFound();
