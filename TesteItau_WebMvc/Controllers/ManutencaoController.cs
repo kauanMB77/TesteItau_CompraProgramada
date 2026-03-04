@@ -17,50 +17,36 @@ namespace TesteItau_WebMvc.Controllers
 
         public async Task<IActionResult> Index()
         {
+            //Valida usuario logado
             var clienteId = HttpContext.Session.GetInt32("UsuarioId");
-
             if (clienteId == null)
                 return RedirectToAction("Login", "Auth");
 
             var response = await _httpClient.GetAsync($"api/Clientes/{clienteId}");
-
             if (!response.IsSuccessStatusCode)
                 return RedirectToAction("Index", "Home");
 
             var json = await response.Content.ReadAsStringAsync();
+            var cliente = JsonSerializer.Deserialize<ManutencaoViewModel>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var cliente = JsonSerializer.Deserialize<ManutencaoViewModel>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            //Retorna cliente para montar 
             return View(cliente);
         }
 
         [HttpPost]
         public async Task<IActionResult> AlterarValor(string novoValor)
         {
+            //Valida usuario logado
             var clienteId = HttpContext.Session.GetInt32("UsuarioId");
-
             if (clienteId == null)
                 return RedirectToAction("Login", "Auth");
 
-            if (!decimal.TryParse(
-                novoValor,
-                System.Globalization.NumberStyles.Any,
-                new System.Globalization.CultureInfo("pt-BR"),
-                out decimal valorConvertido))
-            {
+            //Valida valor para valorMensal
+            if (!decimal.TryParse(novoValor, System.Globalization.NumberStyles.Any, new System.Globalization.CultureInfo("pt-BR"), out decimal valorConvertido))
                 return Content("Valor inválido.");
-            }
 
-            var content = new StringContent(
-                JsonSerializer.Serialize(valorConvertido),
-                Encoding.UTF8,
-                "application/json");
-
-            var response = await _httpClient.PutAsync(
-                $"api/Clientes/{clienteId}/valor",
-                content);
+            var content = new StringContent(JsonSerializer.Serialize(valorConvertido), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"api/Clientes/{clienteId}/valor", content);
 
             if (!response.IsSuccessStatusCode)
                 return Content("Erro ao alterar valor.");
@@ -71,8 +57,8 @@ namespace TesteItau_WebMvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Desativar()
         {
+            //Valida usuario logado
             var clienteId = HttpContext.Session.GetInt32("UsuarioId");
-
             if (clienteId == null)
                 return RedirectToAction("Login", "Auth");
 
@@ -87,8 +73,8 @@ namespace TesteItau_WebMvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Ativar()
         {
+            //Valida usuario logado
             var clienteId = HttpContext.Session.GetInt32("UsuarioId");
-
             if (clienteId == null)
                 return RedirectToAction("Login", "Auth");
 
