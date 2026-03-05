@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using TesteItau_WebApp.DAO;
 using TesteItau_WebApp.Models;
+using Confluent.Kafka;
+using System.Text.Json;
 
 namespace TesteItau_WebApp.Controllers
 {
@@ -16,33 +18,54 @@ namespace TesteItau_WebApp.Controllers
 			_context = context;
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> PostEventoIR(EventoIR evento)
-		{
-			var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == evento.ClienteId);
+        [HttpPost]
+        public async Task<IActionResult> PostEventoIR(EventoIR evento)
+        {
+            var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == evento.ClienteId);
 
-			if (!clienteExiste)
-				return BadRequest("ClienteId informado não existe.");
+            if (!clienteExiste)
+                return BadRequest("ClienteId informado não existe.");
 
-			if (evento.Tipo != "DEDO_DURO" && evento.Tipo != "IR_VENDA")
-			{
-				return BadRequest("Tipo deve ser 'DEDO_DURO' ou 'IR_VENDA'.");
-			}
+            if (evento.Tipo != "DEDO_DURO" && evento.Tipo != "IR_VENDA")
+            {
+                return BadRequest("Tipo deve ser 'DEDO_DURO' ou 'IR_VENDA'.");
+            }
 
-			evento.Id = 0;
+            evento.Id = 0;
 
-			evento.DataEvento = evento.DataEvento ?? DateTime.Now;
+            evento.DataEvento = evento.DataEvento ?? DateTime.Now;
 
-			evento.PublicadoKafka = evento.PublicadoKafka ?? false;
+            evento.PublicadoKafka = evento.PublicadoKafka ?? false;
 
-			_context.EventosIR.Add(evento);
-			await _context.SaveChangesAsync();
+            _context.EventosIR.Add(evento);
+            await _context.SaveChangesAsync();
 
-			return CreatedAtAction(nameof(GetEventoIR),
-				new { id = evento.Id }, evento);
-		}
+            var config = new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092"
+            };
 
-		[HttpGet]
+            using var producer = new ProducerBuilder<Null, string>(config).Build();
+
+            var eventoKafka = new
+            {
+                ClienteId = evento.ClienteId,
+                Tipo = evento.Tipo,
+                ValorIR = evento.ValorIR
+            };
+
+            var mensagem = JsonSerializer.Serialize(eventoKafka);
+
+            await producer.ProduceAsync("impostos", new Message<Null, string>
+            {
+                Value = mensagem
+            });
+
+            return CreatedAtAction(nameof(GetEventoIR),
+                new { id = evento.Id }, evento);
+        }
+
+        [HttpGet]
 		public async Task<IActionResult> GetEventosIR()
 		{
 			var eventos = await _context.EventosIR.ToListAsync();

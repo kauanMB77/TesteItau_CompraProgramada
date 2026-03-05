@@ -29,13 +29,13 @@ namespace TesteItau_WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> PostRebalanceamento(Rebalanceamento rebalanceamento)
         {
-            // Validando se o cliente existe
+            //Validando se o cliente existe
             var clienteExiste = await _context.Clientes.AnyAsync(c => c.Id == rebalanceamento.ClienteId);
 
             if (!clienteExiste)
                 return BadRequest("ClienteId informado não existe.");
 
-            // Validando Enum Tipo
+            //Validando Enum Tipo
             if (rebalanceamento.Tipo != "MUDANCA_CESTA" && rebalanceamento.Tipo != "DESVIO")
             {
                 return BadRequest("Tipo deve ser 'MUDANCA_CESTA' ou 'DESVIO'.");
@@ -48,11 +48,23 @@ namespace TesteItau_WebApp.Controllers
             _context.Rebalanceamentos.Add(rebalanceamento);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(
-                nameof(GetRebalanceamentos),
-                new { id = rebalanceamento.Id },
-                rebalanceamento
-            );
+            if (rebalanceamento.ValorVenda > 20000)
+            {
+                var eventoIR = new EventoIR
+                {
+                    ClienteId = rebalanceamento.ClienteId,
+                    Tipo = "IR_VENDA",
+                    ValorIR = rebalanceamento.ValorVenda,
+                    DataEvento = DateTime.Now
+                };
+
+                var eventosController = new EventosIRController(_context);
+
+                await eventosController.PostEventoIR(eventoIR);
+            }
+
+            return CreatedAtAction(nameof(GetRebalanceamentos),
+                new { id = rebalanceamento.Id }, rebalanceamento);
         }
 
         /// <summary>
