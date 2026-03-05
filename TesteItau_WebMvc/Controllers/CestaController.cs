@@ -16,41 +16,31 @@ namespace TesteItau_WebMvc.Controllers
 
         public async Task<IActionResult> Index()
         {
+            //Valida se o usuário esta logado
             if (HttpContext.Session.GetString("UsuarioLogado") == null)
                 return RedirectToAction("Login", "Auth");
 
             var client = _factory.CreateClient();
 
-            var cestaResponse =
-                await client.GetAsync("https://localhost:7101/api/CestasRecomendacao/ativa");
-
+            //Verificando a cesta ativa
+            var cestaResponse = await client.GetAsync("https://localhost:7101/api/CestasRecomendacao/ativa");
             if (!cestaResponse.IsSuccessStatusCode)
                 return View(new List<CestaTopFiveViewModel>());
 
             var cestaJson = await cestaResponse.Content.ReadAsStringAsync();
-
-            var cestaAtiva =
-                JsonSerializer.Deserialize<CestaViewModel>(
-                    cestaJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            var cestaAtiva = JsonSerializer.Deserialize<CestaViewModel>(cestaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (cestaAtiva == null)
                 return View(new List<CestaTopFiveViewModel>());
 
-            var itensResponse =
-                await client.GetAsync($"https://localhost:7101/api/ItensCesta/itensCesta/{cestaAtiva.Id}");
-
+            //Verificando itens da cesta ativa
+            var itensResponse = await client.GetAsync($"https://localhost:7101/api/ItensCesta/itensCesta/{cestaAtiva.Id}");
             var lista = new List<CestaTopFiveViewModel>();
 
+            //Armazena e retorna na View os itens da CestaAtiva
             if (itensResponse.IsSuccessStatusCode)
             {
                 var json = await itensResponse.Content.ReadAsStringAsync();
-
-                lista =
-                    JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(
-                        json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new List<CestaTopFiveViewModel>();
+                lista =JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CestaTopFiveViewModel>();
             }
 
             return View(lista);
@@ -59,94 +49,69 @@ namespace TesteItau_WebMvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Editar(List<CestaTopFiveViewModel> model)
         {
+            //Validando se o usuário esta logado
             if (HttpContext.Session.GetString("UsuarioLogado") == null)
                 return RedirectToAction("Login", "Auth");
 
             var client = _factory.CreateClient();
 
-            // 1️⃣ Buscar cesta ativa atual
-            var cestaResponse =
-                await client.GetAsync("https://localhost:7101/api/CestasRecomendacao/ativa");
-
+            //Buscando CestaAtiva
+            var cestaResponse = await client.GetAsync("https://localhost:7101/api/CestasRecomendacao/ativa");
             if (!cestaResponse.IsSuccessStatusCode)
                 return RedirectToAction("Index");
 
             var cestaJson = await cestaResponse.Content.ReadAsStringAsync();
-
-            var cestaAtiva =
-                JsonSerializer.Deserialize<CestaViewModel>(
-                    cestaJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            var cestaAtiva = JsonSerializer.Deserialize<CestaViewModel>(cestaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (cestaAtiva == null)
                 return RedirectToAction("Index");
 
             var idCestaAntiga = cestaAtiva.Id;
 
-            // 2️⃣ Buscar itens da cesta antiga
+            //Armazenando os itens da CestaAntiga (cesta atual antes da mudança que será feita mais pra frente no método)
             var itensAntigosResponse = await client.GetAsync($"https://localhost:7101/api/ItensCesta/itensCesta/{idCestaAntiga}");
-
             var itensAntigos = new List<CestaTopFiveViewModel>();
 
             if (itensAntigosResponse.IsSuccessStatusCode)
             {
                 var jsonAntigos = await itensAntigosResponse.Content.ReadAsStringAsync();
-
-                itensAntigos =
-                    JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(
-                        jsonAntigos,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new List<CestaTopFiveViewModel>();
+                itensAntigos = JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(jsonAntigos, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CestaTopFiveViewModel>();
             }
 
-            var tickersAntigos =
-                itensAntigos.Select(i => i.Ticker.Trim().ToUpper()).ToList();
+            var tickersAntigos = itensAntigos.Select(i => i.Ticker.Trim().ToUpper()).ToList();
 
-            // 3️⃣ Criar nova cesta
+            //Criando a nova cesta, com os itens novos
+            //O nome por exemplo é Cesta050326, baseado na data, como não precisa ser UNIQUE, não tem problema criar mais de uma por dia
             var nomeNovaCesta = $"Cesta{DateTime.Now:dd_MM_yy}";
-
             var novaCesta = new
             {
                 Nome = nomeNovaCesta,
                 Ativo = true
             };
 
-            var novaCestaResponse =
-                await client.PostAsJsonAsync(
-                    "https://localhost:7101/api/CestasRecomendacao",
-                    novaCesta);
-
+            var novaCestaResponse = await client.PostAsJsonAsync("https://localhost:7101/api/CestasRecomendacao", novaCesta);
             if (!novaCestaResponse.IsSuccessStatusCode)
                 return RedirectToAction("Index");
 
             var novaCestaJson = await novaCestaResponse.Content.ReadAsStringAsync();
+            var cestaCriada =JsonSerializer.Deserialize<CestaViewModel>(novaCestaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var cestaCriada =
-                JsonSerializer.Deserialize<CestaViewModel>(
-                    novaCestaJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            //Valida se não houve nenhum erro na cestaCriada, se já tiver aqui, não continua os próximos passos de desativar a cesta antiga e ativar a nova
             if (cestaCriada == null)
                 return RedirectToAction("Index");
 
             var novoCestaId = cestaCriada.Id;
 
-            // 6️⃣ Desativar cesta antiga
+            //Desativa a cesta antiga
             await client.PutAsync($"https://localhost:7101/api/CestasRecomendacao/desativar/{idCestaAntiga}", null);
 
-            // 🔹 Descobrir tickers que entraram
-            var tickersNovos = model
-                .Select(i => i.Ticker.Trim().ToUpper())
-                .ToList();
+            //Começo a lógiga de compras e vendas aqui, coletando os tickers que entraram
+            var tickersNovos = model.Select(i => i.Ticker.Trim().ToUpper()).ToList();
+            var tickersQueEntraram = tickersNovos.Where(t => !tickersAntigos.Contains(t)).ToList();
 
-            var tickersQueEntraram = tickersNovos
-                .Where(t => !tickersAntigos.Contains(t))
-                .ToList();
-
-            // 🔹 Importar apenas cotações dos que entraram
+            //Importa a cotação dos tickers novos da COTAHIST
             await ImportarCotacoesPorTickers(tickersQueEntraram);
 
-            // 4️⃣ Inserir novos itens
+            //Insere novos itens no ItensCesta
             foreach (var item in model)
             {
                 var novoItem = new
@@ -155,135 +120,99 @@ namespace TesteItau_WebMvc.Controllers
                     Ticker = item.Ticker.Trim().ToUpper(),
                     Percentual = item.Percentual
                 };
-
                 await client.PostAsJsonAsync("https://localhost:7101/api/ItensCesta", novoItem);
             }
 
-            // 5️⃣ Descobrir tickers que saíram
-            var tickersQueSairam =
-                tickersAntigos
-                .Where(t => !tickersNovos.Contains(t))
-                .ToList();
+            //Verifica Tickers que sairam da Cesta
+            var tickersQueSairam = tickersAntigos.Where(t => !tickersNovos.Contains(t)).ToList();
 
-            // 7️⃣ Atualizar TODAS as carteiras dos clientes
+            //Armazeno todos os Clientes
             var clientesResponse = await client.GetAsync("https://localhost:7101/api/Clientes");
-
             if (clientesResponse.IsSuccessStatusCode)
             {
                 var jsonClientes = await clientesResponse.Content.ReadAsStringAsync();
+                var clientes =JsonSerializer.Deserialize<List<ClienteViewModel>>(jsonClientes, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ClienteViewModel>();
 
-                var clientes =
-                    JsonSerializer.Deserialize<List<ClienteViewModel>>(
-                        jsonClientes,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    ) ?? new List<ClienteViewModel>();
-
+                //Faço a venda das ações antigas e compra das novas com o valor por Cliente
                 foreach (var cliente in clientes.Where(c => c.Ativo))
                 {
-                    // 🔹 1. Buscar conta gráfica do cliente
+                    //ContaGráfica de cada Cliente
                     var contaResponse = await client.GetAsync($"https://localhost:7101/api/ContasGraficas/cliente/{cliente.Id}");
-
                     if (!contaResponse.IsSuccessStatusCode)
                         continue;
 
                     var jsonConta = await contaResponse.Content.ReadAsStringAsync();
-
-                    var conta =
-                        JsonSerializer.Deserialize<ContaGraficaViewModel>(
-                            jsonConta,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var conta =JsonSerializer.Deserialize<ContaGraficaViewModel>(jsonConta, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     if (conta == null)
                         continue;
 
-                    // 🔹 2. Buscar custódias da conta
-                    var custodiaResponse =
-                        await client.GetAsync($"https://localhost:7101/api/Custodia/conta/{conta.contaGraficaId}");
+                    //Custodias do cliente
+                    var custodiaResponse =await client.GetAsync($"https://localhost:7101/api/Custodia/conta/{conta.contaGraficaId}");
 
                     if (!custodiaResponse.IsSuccessStatusCode)
                         continue;
 
                     var jsonCustodias = await custodiaResponse.Content.ReadAsStringAsync();
+                    var custodias = JsonSerializer.Deserialize<List<CustodiaViewModel>>(jsonCustodias, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CustodiaViewModel>();
 
-                    var custodias =
-                        JsonSerializer.Deserialize<List<CustodiaViewModel>>(
-                            jsonCustodias,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                        ) ?? new List<CustodiaViewModel>();
 
                     decimal valorTotalVendido = 0m;
 
-                    // 🔹 3. VENDER tickers que saíram
 
-                    // Buscar TODAS as cotações uma única vez (melhor performance)
-                    var cotacoesResponse =
-                        await client.GetAsync("https://localhost:7101/api/Cotacoes");
-
+                    //Venda das ações antigas
+                    var cotacoesResponse = await client.GetAsync("https://localhost:7101/api/Cotacoes");
                     if (!cotacoesResponse.IsSuccessStatusCode)
                         continue;
 
                     var jsonCotacoes = await cotacoesResponse.Content.ReadAsStringAsync();
+                    var cotacoes =JsonSerializer.Deserialize<List<CotacaoViewModel>>(jsonCotacoes, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CotacaoViewModel>();
 
-                    var cotacoes =
-                        JsonSerializer.Deserialize<List<CotacaoViewModel>>(
-                            jsonCotacoes,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                        ) ?? new List<CotacaoViewModel>();
-
+                    //Passa Ticker a Ticker do cliente
                     foreach (var custodia in custodias)
                     {
+                        //Valido se algum desses é o que saiu
                         var tickerCustodia = custodia.Ticker.Trim().ToUpper();
-
                         if (!tickersQueSairam.Contains(tickerCustodia))
                             continue;
 
-                        var cotacao =
-                            cotacoes
-                            .Where(c => c.Ticker.Trim().ToUpper() == tickerCustodia)
-                            .FirstOrDefault();
+                        var cotacao = cotacoes.Where(c => c.Ticker.Trim().ToUpper() == tickerCustodia).FirstOrDefault();
 
                         if (cotacao == null)
                             continue;
 
-                        var valorVenda = custodia.Quantidade * cotacao.PrecoFechamento;
-
+                        //Adicone a um caixa temporário que será utilizado para a compra
+                        decimal valorVenda = custodia.Quantidade * cotacao.PrecoFechamento;
                         valorTotalVendido += valorVenda;
 
+                        //Remove as cotações vendidas
                         await client.DeleteAsync($"https://localhost:7101/api/Custodia/clear/{conta.contaGraficaId}/{tickerCustodia}");
                     }
 
+                    //Valida se houve alguma venda
                     if (valorTotalVendido <= 0)
                         continue;
 
 
-                    // 🔹 4. COMPRAR tickers que ENTRARAM na nova cesta
-
+                    //Compra dos novos Tickers, o valor da venda dos tickers que sairam é distribuida nos tickers novos
                     foreach (var itemNovo in model)
                     {
+                        //Verifica os que entraram
                         var tickerNovo = itemNovo.Ticker.Trim().ToUpper();
-
-                        // ✅ Comprar apenas os que entraram
                         if (!tickersQueEntraram.Contains(tickerNovo))
                             continue;
 
-                        // 🔹 Buscar cotação mais recente
-                        var cotacao =
-                            cotacoes
-                            .Where(c => c.Ticker.Trim().ToUpper() == tickerNovo)
-                            .FirstOrDefault();
-
+                        //Cotacoes dos tickers novos
+                        var cotacao = cotacoes.Where(c => c.Ticker.Trim().ToUpper() == tickerNovo).FirstOrDefault();
                         if (cotacao == null || cotacao.PrecoFechamento <= 0)
                             continue;
 
-                        var percentual = itemNovo.Percentual / 100m;
-
-                        var valorParaComprar = valorTotalVendido;
-
+                        decimal percentual = itemNovo.Percentual / 100m;
+                        decimal valorParaComprar = valorTotalVendido;
                         if (valorParaComprar <= 0)
                             continue;
 
-                        // 🔹 Garantir quantidade inteira
-                        var quantidade = (int)Math.Floor(valorParaComprar / cotacao.PrecoFechamento);
+                        int quantidade = (int)Math.Floor(valorParaComprar / cotacao.PrecoFechamento);
 
                         if (quantidade <= 0)
                             continue;
@@ -296,9 +225,7 @@ namespace TesteItau_WebMvc.Controllers
                             precoMedio = valorParaComprar/quantidade
                         };
 
-                        await client.PostAsJsonAsync(
-                            "https://localhost:7101/api/Custodia",
-                            compra);
+                        await client.PostAsJsonAsync("https://localhost:7101/api/Custodia", compra);
                     }
                 }
             }
@@ -317,31 +244,26 @@ namespace TesteItau_WebMvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Historico(long cestaId)
         {
+            //Valida o UserLogado
             if (HttpContext.Session.GetString("UsuarioLogado") == null)
                 return RedirectToAction("Login", "Auth");
 
             var client = _factory.CreateClient();
 
+            //Lista ItensCesta dada certo ID
             var response = await client.GetAsync("https://localhost:7101/api/ItensCesta");
-
             var listaFiltrada = new List<CestaTopFiveViewModel>();
 
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
 
-                var todosItens =
-                    JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(
-                        json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? new List<CestaTopFiveViewModel>();
+                var todosItens = JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CestaTopFiveViewModel>();
 
-                listaFiltrada =
-                    todosItens
-                    .Where(i => i.CestaId == cestaId)
-                    .ToList();
+                listaFiltrada = todosItens.Where(i => i.CestaId == cestaId).ToList();
             }
 
+            //ViewBag para ser mostrado na tela
             ViewBag.CestaId = cestaId;
 
             return View(listaFiltrada);
@@ -355,61 +277,51 @@ namespace TesteItau_WebMvc.Controllers
 
             var client = _factory.CreateClient();
 
-            // 1️⃣ Buscar cesta ativa
+            //Buscando cestaAtiva
             var cestaResponse = await client.GetAsync("https://localhost:7101/api/CestasRecomendacao/ativa");
-
             if (!cestaResponse.IsSuccessStatusCode)
                 return RedirectToAction("Index");
 
             var cestaJson = await cestaResponse.Content.ReadAsStringAsync();
+            var cestaAtiva = JsonSerializer.Deserialize<CestaViewModel>(cestaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var cestaAtiva = JsonSerializer.Deserialize<CestaViewModel>(
-                cestaJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
-
+            //Valida se encontrou a cestaAtiva
             if (cestaAtiva == null)
                 return RedirectToAction("Index");
 
-            // 2️⃣ Buscar itens da cesta ativa
-            var itensResponse = await client.GetAsync(
-                $"https://localhost:7101/api/ItensCesta/itensCesta/{cestaAtiva.Id}");
+            //Armazena itens da cesta, tendo em vista que só busco no COTAHIST as cotacoes destes itens da cesta
+            var itensResponse = await client.GetAsync($"https://localhost:7101/api/ItensCesta/itensCesta/{cestaAtiva.Id}");
 
             var tickersCesta = new List<string>();
 
             if (itensResponse.IsSuccessStatusCode)
             {
                 var json = await itensResponse.Content.ReadAsStringAsync();
+                var itens = JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<CestaTopFiveViewModel>();
 
-                var itens = JsonSerializer.Deserialize<List<CestaTopFiveViewModel>>(
-                    json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                ) ?? new List<CestaTopFiveViewModel>();
-
-                tickersCesta = itens
-                    .Select(i => i.Ticker.Trim().ToUpper())
-                    .ToList();
+                tickersCesta = itens.Select(i => i.Ticker.Trim().ToUpper()).ToList();
             }
 
-            // 3️⃣ Ler arquivo
+            //Leitura do arquivo
             var caminhoArquivo = @"C:\Users\kauan\source\repos\TesteItau_WebApp\Cotahist\COTAHIST_D27022026.TXT";
 
+            //Validação se o caminho está certo
             if (!System.IO.File.Exists(caminhoArquivo))
                 return Content("Arquivo não encontrado.");
 
             var linhas = await System.IO.File.ReadAllLinesAsync(caminhoArquivo);
-
             int registrosImportados = 0;
 
             foreach (var linha in linhas)
             {
-                // Ignorar header/trailer
+                //Ignorando Header e Trailler
                 if (!linha.StartsWith("01"))
                     continue;
 
                 if (linha.Length < 121)
                     continue;
 
+                //Substring das linhas em si
                 var codneg = linha.Substring(12, 12).Trim().ToUpper();
                 var datpre = linha.Substring(2, 8).Trim();
                 var preabe = linha.Substring(56, 13).Trim();
@@ -417,10 +329,11 @@ namespace TesteItau_WebMvc.Controllers
                 var premin = linha.Substring(82, 13).Trim();
                 var preult = linha.Substring(108, 13).Trim();
 
+                //Aqui eu valido se o codneg é igual a algum dos tickers da Cesta, se não for não continuo a operação
                 if (!tickersCesta.Contains(codneg))
                     continue;
 
-                // ✅ Parse seguro da data
+                //Parse da Data
                 if (!DateTime.TryParseExact(
                         datpre,
                         "yyyyMMdd",
@@ -431,7 +344,7 @@ namespace TesteItau_WebMvc.Controllers
                     continue;
                 }
 
-                // ✅ Parse seguro dos preços
+                //Parse dos preços
                 if (!decimal.TryParse(preabe, out decimal abertura))
                     continue;
 
@@ -444,6 +357,7 @@ namespace TesteItau_WebMvc.Controllers
                 if (!decimal.TryParse(preult, out decimal fechamento))
                     continue;
 
+                // /100m para organizar o padrão do COTAHIST
                 var cotacao = new
                 {
                     DataPregao = dataPregao,
@@ -455,25 +369,29 @@ namespace TesteItau_WebMvc.Controllers
                 };
 
                 var response = await client.PostAsJsonAsync("https://localhost:7101/api/Cotacoes", cotacao);
-
                 if (response.IsSuccessStatusCode)
                     registrosImportados++;
             }
 
+            //Informação para a View
             TempData["Mensagem"] = $"{registrosImportados} cotações importadas com sucesso.";
 
+            //No futuro, enviar para a View de ResultadosCotahist
             return RedirectToAction("Index");
         }
 
         private async Task ImportarCotacoesPorTickers(List<string> tickers)
         {
+            //Valida se os tickers estão corretos, para evitar exceções
             if (tickers == null || !tickers.Any())
                 return;
 
             var client = _factory.CreateClient();
 
+            //Tirar o HardCodded
             var caminhoArquivo = @"C:\Users\kauan\source\repos\TesteItau_WebApp\Cotahist\COTAHIST_D27022026.TXT";
 
+            //Valida caminho do arquivo
             if (!System.IO.File.Exists(caminhoArquivo))
                 return;
 
@@ -481,6 +399,7 @@ namespace TesteItau_WebMvc.Controllers
 
             foreach (var linha in linhas)
             {
+                //Ignora Headers e Traillers
                 if (!linha.StartsWith("01"))
                     continue;
 
@@ -488,26 +407,21 @@ namespace TesteItau_WebMvc.Controllers
                     continue;
 
                 var codneg = linha.Substring(12, 12).Trim().ToUpper();
-
-                if (!tickers.Contains(codneg))
-                    continue;
-
                 var datpre = linha.Substring(2, 8).Trim();
                 var preabe = linha.Substring(56, 13).Trim();
                 var premax = linha.Substring(69, 13).Trim();
                 var premin = linha.Substring(82, 13).Trim();
                 var preult = linha.Substring(108, 13).Trim();
 
-                // ✅ Data
-                if (!DateTime.TryParseExact(
-                        datpre,
-                        "yyyyMMdd",
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.None,
-                        out DateTime dataPregao))
+                //Valida se o codneg está em Tickers, caso não não continua a operação
+                if (!tickers.Contains(codneg))
                     continue;
 
-                // ✅ Preços
+                //Parse da Data
+                if (!DateTime.TryParseExact(datpre, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataPregao))
+                    continue;
+
+                //Parse dos preços
                 if (!decimal.TryParse(preabe, out decimal abertura))
                     continue;
 
@@ -520,6 +434,7 @@ namespace TesteItau_WebMvc.Controllers
                 if (!decimal.TryParse(preult, out decimal fechamento))
                     continue;
 
+                // /100m para organizar o padrão do COTAHIST
                 var cotacao = new
                 {
                     DataPregao = dataPregao,
@@ -530,9 +445,7 @@ namespace TesteItau_WebMvc.Controllers
                     PrecoFechamento = fechamento / 100m
                 };
 
-                await client.PostAsJsonAsync(
-                    "https://localhost:7101/api/Cotacoes",
-                    cotacao);
+                await client.PostAsJsonAsync("https://localhost:7101/api/Cotacoes", cotacao);
             }
         }
     }
