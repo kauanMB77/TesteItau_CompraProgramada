@@ -19,5 +19,6 @@ namespace TesteItau_WebApp.DAO
 		public DbSet<ItemCesta> ItensCesta { get; set; }
 		public DbSet<Cotacao> Cotacoes { get; set; }
 		public DbSet<Usuario> Usuarios { get; set; }
+		public DbSet<Rebalanceamento> Rebalanceamentos { get; set;}
 	}
 }

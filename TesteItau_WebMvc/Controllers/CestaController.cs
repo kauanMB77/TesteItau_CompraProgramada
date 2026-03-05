@@ -186,7 +186,7 @@ namespace TesteItau_WebMvc.Controllers
                         valorTotalVendido += valorVenda;
 
                         //Remove as cotações vendidas
-                        await client.DeleteAsync($"https://localhost:7101/api/Custodia/clear/{conta.contaGraficaId}/{tickerCustodia}");
+                        await client.DeleteAsync($"https://localhost:7101/api/Custodia/clear/{conta.contaGraficaId}/{custodia.Ticker}");
                     }
 
                     //Valida se houve alguma venda

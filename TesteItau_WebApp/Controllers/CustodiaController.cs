@@ -81,7 +81,7 @@ namespace TesteItau_WebApp.Controllers
         [HttpGet("{id}")]
 		public async Task<IActionResult> GetCustodia(long id)
 		{
-			var custodia = await _context.Custodias.Include(c => c.ContaGrafica).FirstOrDefaultAsync(c => c.Id == id);
+			var custodia = await _context.Custodias.Include(c => c.ContaGrafica).FirstOrDefaultAsync(c => c.Id == id && c.Quantidade >0);
 
 			if (custodia == null)
 				return NotFound();
@@ -132,21 +132,31 @@ namespace TesteItau_WebApp.Controllers
         /// <response code="200">Custodias limpas com sucesso.</response>
         /// <response code="400">Falha ao limpar as custodias, variáveis incorretas</response>
         [HttpDelete("clear/{contaGraficaId}/{ticker}")]
-        public async Task<IActionResult> DeleteAllCustodiasById(long  contaGraficaId, string ticker)
+        public async Task<IActionResult> DeleteAllCustodiasById(long contaGraficaId, string ticker)
         {
-            //Validando se existe conta com o id informado
-            var custodias = await _context.Custodias.Where(c=> c.ContaGraficaId == contaGraficaId && c.Ticker == ticker).ToListAsync();
-            if (!custodias.Any())
-                return NotFound("Nenhuma custodia encontrada para o Id informado");
-
-            //Validando o Ticker
-            if (string.IsNullOrEmpty(ticker))
+            if (string.IsNullOrWhiteSpace(ticker))
                 return BadRequest("ticker é obrigatório.");
 
-            _context.Custodias.RemoveRange(custodias);
-            await _context.SaveChangesAsync();
+            var custodias = await _context.Custodias
+                .Where(c => c.ContaGraficaId == contaGraficaId && c.Ticker == ticker)
+                .ToListAsync();
 
-            return Ok("Custodias limpas para o Id informado");
+            if (!custodias.Any())
+                return NotFound("Nenhuma custodia encontrada.");
+
+            var idsCustodia = custodias.Select(c => c.Id).ToList();
+
+            // 1️⃣ Remove primeiro as distribuições
+            await _context.Distribuicoes
+                .Where(d => idsCustodia.Contains(d.CustodiaFilhoteId))
+                .ExecuteDeleteAsync();
+
+            // 2️⃣ Agora remove as custodias
+            await _context.Custodias
+                .Where(c => idsCustodia.Contains(c.Id))
+                .ExecuteDeleteAsync();
+
+            return Ok("Custodias limpas com sucesso");
         }
     }
 }

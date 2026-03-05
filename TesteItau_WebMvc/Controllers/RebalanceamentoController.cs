@@ -35,7 +35,7 @@ public class RebalanceamentoController : Controller
         var cotacoes = JsonSerializer.Deserialize<List<CotacaoViewModel>>(cotacoesJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         // Dicionario dos tickers por cotacao
-        var precosFechamento = cotacoes.GroupBy(c => c.Ticker).ToDictionary(g => g.Key,g => g.First().PrecoFechamento);
+        var precosFechamento = cotacoes.GroupBy(c => c.Ticker).ToDictionary(g => g.Key, g => g.First().PrecoFechamento);
 
         //Lista Usuarios Ativos
         var usuariosResp = await client.GetAsync("api/Clientes");
@@ -59,7 +59,7 @@ public class RebalanceamentoController : Controller
             //Custodias da Conta atual do foreach
             var custodiaResp = await client.GetAsync($"api/Custodia/conta/{conta.contaGraficaId}");
             var custodiaJson = await custodiaResp.Content.ReadAsStringAsync();
-            var custodias = JsonSerializer.Deserialize<List<CustodiaViewModel>>(custodiaJson,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var custodias = JsonSerializer.Deserialize<List<CustodiaViewModel>>(custodiaJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (!custodias.Any())
                 continue;
@@ -68,6 +68,8 @@ public class RebalanceamentoController : Controller
             decimal valorTotal = custodias.Sum(c => c.Quantidade * precosFechamento[c.Ticker]);
 
             decimal caixa = 0;
+
+            var vendasRealizadas = new List<(string ticker, decimal valorVenda)>();
 
             //Começando o motor de vendas para Tickers acima da porcentagem
             foreach (var item in itensCesta)
@@ -96,6 +98,11 @@ public class RebalanceamentoController : Controller
                     caixa += quantidadeVenda * precoAtual;
                     custodia.Quantidade -= quantidadeVenda;
 
+                    //Valores para o POST de Rebalanceamentos
+                    decimal valorExecutadoVenda = quantidadeVenda * precoAtual;
+                    vendasRealizadas.Add((item.Ticker, valorExecutadoVenda));
+
+
                     //Log para a tela de resultado
                     resultadoFinal.Add($"Usuário {usuario.Id}: Vendeu {quantidadeVenda} de {item.Ticker}");
 
@@ -104,18 +111,19 @@ public class RebalanceamentoController : Controller
                     {
                         contaGraficaId = conta.contaGraficaId,
                         ticker = item.Ticker,
-                        quantidade = -quantidadeVenda
+                        quantidade = -quantidadeVenda,
+                        precoMedio = custodia.PrecoMedio
                     };
 
-                    var content = new StringContent(JsonSerializer.Serialize(atualizarCustodia),Encoding.UTF8, "application/json");
+                    var content = new StringContent(JsonSerializer.Serialize(atualizarCustodia), Encoding.UTF8, "application/json");
 
                     await client.PostAsync("api/Custodia", content);
                 }
 
                 //Recalcula o valor total da carteira após todas as possiveis vendas
-                valorTotal = custodias.Sum(c => c.Quantidade * precosFechamento[c.Ticker]);
+                //valorTotal = custodias.Sum(c => c.Quantidade * precosFechamento[c.Ticker]);
             }
-            
+
             //Compras utilizando o valor de venda das ações
             if (caixa > 0)
             {
@@ -154,6 +162,11 @@ public class RebalanceamentoController : Controller
 
                         decimal valorExecutado = quantidadeCompra * precoAtual;
 
+                        foreach (var venda in vendasRealizadas)
+                        {
+                            await EnviarRebalanceamento(client, usuario.Id, venda.ticker, ativo.Ticker,venda.valorVenda);
+                        }
+
                         caixa -= valorExecutado;
 
                         var custodia = custodias.FirstOrDefault(c => c.Ticker == ativo.Ticker);
@@ -169,7 +182,7 @@ public class RebalanceamentoController : Controller
 
                             custodias.Add(custodia);
                         }
-                      
+
                         //Recalculando o precoMedio para mandar pra API
                         decimal quantidadeAtual = custodia.Quantidade;
                         decimal precoMedioAtual = custodia.PrecoMedio;
@@ -178,11 +191,11 @@ public class RebalanceamentoController : Controller
 
                         if (quantidadeAtual > 0)
                         {
-                            novoPrecoMedio =((quantidadeAtual * precoMedioAtual) +(quantidadeCompra * precoAtual))/(quantidadeAtual + quantidadeCompra);
+                            novoPrecoMedio = ((quantidadeAtual * precoMedioAtual) + (quantidadeCompra * precoAtual)) / (quantidadeAtual + quantidadeCompra);
                         }
 
                         custodia.Quantidade += quantidadeCompra;
-                        custodia.PrecoMedio = novoPrecoMedio;
+                        //custodia.PrecoMedio = novoPrecoMedio;
 
                         resultadoFinal.Add($"Usuário {usuario.Id}: Comprou {quantidadeCompra} de {ativo.Ticker}");
 
@@ -191,7 +204,7 @@ public class RebalanceamentoController : Controller
                             contaGraficaId = conta.contaGraficaId,
                             ticker = ativo.Ticker,
                             quantidade = quantidadeCompra,
-                            precoMedio = novoPrecoMedio
+                            precoMedio = custodia.PrecoMedio
                         };
 
                         var content = new StringContent(JsonSerializer.Serialize(atualizarCustodia), Encoding.UTF8, "application/json");
@@ -203,5 +216,19 @@ public class RebalanceamentoController : Controller
         }
 
         return View(resultadoFinal);
+    }
+
+    private async Task EnviarRebalanceamento(HttpClient client, long clienteId, string tickerVendido, string tickerComprado, decimal valorVenda)
+    {
+        var rebalanceamento = new
+        {
+            clienteId = clienteId,
+            tipo = "DESVIO",
+            tickerVendido = tickerVendido,
+            tickerComprado = tickerComprado,
+            valorVenda = valorVenda
+        };
+
+        await client.PostAsJsonAsync("api/Rebalanceamentos", rebalanceamento);
     }
 }
