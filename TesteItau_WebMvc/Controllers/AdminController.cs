@@ -195,7 +195,10 @@ namespace TesteItau_WebMvc.Controllers
                     var ordemCompra = JsonSerializer.Deserialize<OrdemCompraViewModel>(jsonOrdemCompra, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     if (custodiaCriada != null)
+                    {
                         await EnviarDistribuicao(client, ordemCompraId: ordemCompra.Id, custodiaFilhoteId: custodiaCriada.id, ticker: ticker, quantidade: quantidadeCliente, precoUnitario: preco);
+                        await EnviarEventoIR(client, clienteId: cliente.Id, quantidade: quantidadeCliente,precoFechamento: preco);
+                    }
                 }
             }
 
@@ -286,6 +289,25 @@ namespace TesteItau_WebMvc.Controllers
             };
 
             await client.PostAsJsonAsync("https://localhost:7101/api/Distribuicoes", distribuicao);
+        }
+
+        //POST do eventoIR DEDO_DURO
+        private async Task EnviarEventoIR(HttpClient client, long clienteId, int quantidade, decimal precoFechamento)
+        {
+            var valorBase = precoFechamento * quantidade;
+
+            var valorIR = valorBase * 0.00005m;
+
+            var eventoIr = new
+            {
+                clienteId = clienteId,
+                tipo = "DEDO_DURO",
+                valorBase = valorBase,
+                valorIR = valorIR,
+                publicadoKafka = true
+            };
+
+            await client.PostAsJsonAsync("https://localhost:7101/api/EventosIR", eventoIr);
         }
     }
 }
