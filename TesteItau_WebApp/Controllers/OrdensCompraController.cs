@@ -79,5 +79,23 @@ namespace TesteItau_WebApp.Controllers
 
 			return Ok(ordem);
 		}
-	}
+
+        /// <summary>
+        /// Retorna a última ordem de compra de um determinado ticker
+        /// </summary>
+        /// <param name="ticker">Ticker a ser retornado</param>
+        /// <returns>Última ordem de compra com o ticker</returns>
+        /// <response code="200">Compra retornada com sucesso.</response>
+        /// <response code="404">Falha ao retornar compra, variáveis incorretas</response>
+        [HttpGet("ultimo/{ticker}")]
+        public async Task<IActionResult> GetUltimaOrdemPorTicker(string ticker)
+        {
+            var ordem = await _context.OrdensCompra.Where(o => o.Ticker == ticker).OrderByDescending(o => o.Id).FirstOrDefaultAsync();
+
+            if (ordem == null)
+                return NotFound($"Nenhuma ordem encontrada para o ticker {ticker}");
+
+            return Ok(ordem);
+        }
+    }
 }

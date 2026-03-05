@@ -4,6 +4,7 @@ namespace TesteItau_WebMvc.Models
 {
     public class CustodiaViewModel
     {
+        public int id { get; set; }
         public string Ticker { get; set; } = null!;
         public decimal Quantidade { get; set; }
         public decimal PrecoMedio { get; set; }

@@ -183,7 +183,20 @@ namespace TesteItau_WebMvc.Controllers
                     precoMedio = preco
                 };
 
-                await client.PostAsJsonAsync("https://localhost:7101/api/Custodia", custodiaCliente);
+                //Posta custodia, caso de cecrto, também faz a postagem de Distribuicoes
+                var responseCustodia = await client.PostAsJsonAsync("https://localhost:7101/api/Custodia", custodiaCliente);
+                if (responseCustodia.IsSuccessStatusCode)
+                {
+                    var jsonCustodia = await responseCustodia.Content.ReadAsStringAsync();
+                    var custodiaCriada = JsonSerializer.Deserialize<CustodiaViewModel>(jsonCustodia,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    var responseOrdemCompra = await client.GetAsync($"https://localhost:7101/api/OrdensCompra/ultimo/{ticker}");
+                    var jsonOrdemCompra = await responseOrdemCompra.Content.ReadAsStringAsync();
+                    var ordemCompra = JsonSerializer.Deserialize<OrdemCompraViewModel>(jsonOrdemCompra, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (custodiaCriada != null)
+                        await EnviarDistribuicao(client, ordemCompraId: ordemCompra.Id, custodiaFilhoteId: custodiaCriada.id, ticker: ticker, quantidade: quantidadeCliente, precoUnitario: preco);
+                }
             }
 
             var sobra = quantidadeTotal - totalDistribuido;
@@ -258,6 +271,21 @@ namespace TesteItau_WebMvc.Controllers
 
                 await client.PostAsJsonAsync("https://localhost:7101/api/OrdensCompra", ordemFracionaria);
             }
+        }
+
+        //Insere distribuição na tabela
+        private async Task EnviarDistribuicao(HttpClient client, long ordemCompraId, long custodiaFilhoteId, string ticker, int quantidade, decimal precoUnitario)
+        {
+            var distribuicao = new
+            {
+                ordemCompraId = ordemCompraId,
+                custodiaFilhoteId = custodiaFilhoteId,
+                ticker = ticker,
+                quantidade = quantidade,
+                precoUnitario = precoUnitario
+            };
+
+            await client.PostAsJsonAsync("https://localhost:7101/api/Distribuicoes", distribuicao);
         }
     }
 }
