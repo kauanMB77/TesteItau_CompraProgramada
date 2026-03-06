@@ -18,6 +18,14 @@ namespace TesteItau_WebApp.Controllers
 			_context = context;
 		}
 
+
+        /// <summary>
+        /// Adiciona um EventoIR na tabela
+        /// </summary>
+        /// <param name="evento">Identificador do evento.</param>
+        /// <returns>Evento encontrado.</returns>
+        /// <response code="200">Evento publicado.</response>
+        /// <response code="404">Evento não publicado.</response>
         [HttpPost]
         public async Task<IActionResult> PostEventoIR(EventoIR evento)
         {
@@ -65,6 +73,12 @@ namespace TesteItau_WebApp.Controllers
                 new { id = evento.Id }, evento);
         }
 
+
+        /// <summary>
+        /// Retorna todos os EventosIR
+        /// </summary>
+        /// <returns>Evento encontrado.</returns>
+        /// <response code="200">Eventos retornados.</response>
         [HttpGet]
 		public async Task<IActionResult> GetEventosIR()
 		{
@@ -73,7 +87,15 @@ namespace TesteItau_WebApp.Controllers
 			return Ok(eventos);
 		}
 
-		[HttpGet("{id}")]
+
+        /// <summary>
+        /// Retorna um evento de imposto de renda específico pelo ID.
+        /// </summary>
+        /// <param name="id">Identificador do evento.</param>
+        /// <returns>Evento encontrado.</returns>
+        /// <response code="200">Evento encontrado.</response>
+        /// <response code="404">Evento não encontrado.</response>
+        [HttpGet("{id}")]
 		public async Task<IActionResult> GetEventoIR(long id)
 		{
 			var evento = await _context.EventosIR.FirstOrDefaultAsync(e => e.Id == id);

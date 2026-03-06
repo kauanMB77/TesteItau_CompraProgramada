@@ -17,13 +17,13 @@ namespace XUnitTestProject.WebApi
         }
 
         [Fact]
-        public async Task PostCliente_DadosValidos_DeveRetornarCreated()
+        public async Task PostCliente_DadosValidos()
         {
             var context = GetDbContext();
             var controller = new ClientesController(context);
             var cliente = new Client
             {
-                Nome = "Joao",
+                Nome = "João",
                 CPF = "12345678900",
                 Email = "joaoTeste@email.com",
                 ValorMensal = 1000,
@@ -35,11 +35,11 @@ namespace XUnitTestProject.WebApi
             var createdResult = Assert.IsType<CreatedAtActionResult>(result);
             var clienteRetornado = Assert.IsType<Client>(createdResult.Value);
 
-            Assert.Equal("Joao", clienteRetornado.Nome);
+            Assert.Equal("João", clienteRetornado.Nome);
         }
 
         [Fact]
-        public async Task PostCliente_NomeVazio_DeveRetornarBadRequest()
+        public async Task PostCliente_NomeVazio()
         {
             var context = GetDbContext();
             var controller = new ClientesController(context);
@@ -57,7 +57,7 @@ namespace XUnitTestProject.WebApi
         }
 
         [Fact]
-        public async Task GetClientes_ComClientes_DeveRetornarOk()
+        public async Task GetClientes_ComClientes()
         {
             var context = GetDbContext();
 
@@ -82,7 +82,7 @@ namespace XUnitTestProject.WebApi
         }
 
         [Fact]
-        public async Task GetCliente_IdInexistente_DeveRetornarNotFound()
+        public async Task GetCliente_IdInexistente()
         {
             var context = GetDbContext();
             var controller = new ClientesController(context);
@@ -93,7 +93,7 @@ namespace XUnitTestProject.WebApi
         }
 
         [Fact]
-        public async Task DesativarConta_ClienteAtivo_DeveDesativar()
+        public async Task DesativarConta_ClienteAtivo()
         {
             var context = GetDbContext();
             var cliente = new Client
@@ -118,7 +118,7 @@ namespace XUnitTestProject.WebApi
         }
 
         [Fact]
-        public async Task AtualizarValorInvestimento_ValorValido_DeveAtualizar()
+        public async Task AtualizarValorInvestimento()
         {
             var context = GetDbContext();
 

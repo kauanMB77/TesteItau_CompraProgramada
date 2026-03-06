@@ -303,7 +303,7 @@ namespace TesteItau_WebMvc.Controllers
             }
 
             //Leitura do arquivo
-            var caminhoArquivo = @"C:\Users\kauan\source\repos\TesteItau_WebApp\Cotahist\COTAHIST_D27022026.TXT";
+            var caminhoArquivo = @"..\Cotahist\COTAHIST_D27022026.TXT";
 
             //Validação se o caminho está certo
             if (!System.IO.File.Exists(caminhoArquivo))
