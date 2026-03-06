@@ -389,7 +389,7 @@ namespace TesteItau_WebMvc.Controllers
             var client = _factory.CreateClient();
 
             //Tirar o HardCodded
-            var caminhoArquivo = @"C:\Users\kauan\source\repos\TesteItau_WebApp\Cotahist\COTAHIST_D27022026.TXT";
+            var caminhoArquivo = @"..\Cotahist\COTAHIST_D27022026.TXT";
 
             //Valida caminho do arquivo
             if (!System.IO.File.Exists(caminhoArquivo))
