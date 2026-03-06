@@ -1,3 +1,7 @@
+CREATE DATABASE MySql_Itau_Compra_Programada;
+
+USE MySql_Itau_Compra_Programada;
+
 CREATE TABLE Clientes (
     Id BIGINT AUTO_INCREMENT PRIMARY KEY,
     Nome VARCHAR(200) NOT NULL,
